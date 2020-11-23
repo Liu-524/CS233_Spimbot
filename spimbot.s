@@ -53,7 +53,7 @@ main:
 
 		addi $sp $sp -4
 		sw $s0 0($sp)
-        li $s0 3
+        li $s0 100
         puzzle_loop:
         beq $s0 $0 go_collect
         la $t1 has_puzzle
@@ -69,7 +69,7 @@ main:
             bne $0 $t2 start_solving
         j while
         start_solving:
-        jal solve
+        jal slow_solve_dominosa
         la $a1 heap
         sw $a1 SUBMIT_SOLUTION
 		addi $s0 $s0 -1
