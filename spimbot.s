@@ -40,11 +40,17 @@ GET_MINIBOT				= 0xffff2014
 ### Puzzle
 GRIDSIZE = 16
 has_puzzle:        .word 0                         
+anchor: 		   .word 0
 puzzle:      .half 0:2000             
 heap:        .half 0:2000
 location:    .byte 0:400
 minibot:	 .word 0:30
 #### Puzzle
+
+three: .float 3.0
+five: .float 5.0
+PI: .float 3.141592
+F180: .float 180.0
 
 
 
@@ -84,7 +90,42 @@ main:
 		addi $s0 $s0 -1
         j puzzle_loop
 
+
+
+
 go_collect:
+
+
+    
+    li $a0 20
+	li $a1 18
+    jal sb_arctan
+    move $s0 $v0
+    li $a0 20
+    li $a1 18
+    jal dist
+    sw $s0 ANGLE($0)
+    li $t0 1
+    sw $t0 ANGLE_CONTROL($0)
+    li $t0 10
+    sw $t0 VELOCITY($0)
+    move $a0 $v0
+    jal stop_timer
+	
+	get_more:
+	li $v0 12
+	li $v1 7
+	jal main_target
+	move $a0 $v0
+	move $a1 $v1
+	jal move_main
+
+	j get_more
+
+
+
+
+		
 		li $t0 1
 		sw $t0 SPAWN_MINIBOT($0)
 		sw $t0 SELECT_IDLE($0)
@@ -115,7 +156,7 @@ go_collect:
 		sw $t0 SET_TARGET($0)
 		li $a0 10000
 		jal stop_timer
-		j spawn_loop_end
+		#j spawn_loop_end
 		j infinite
 
 
@@ -134,7 +175,7 @@ assign_minibot:
 		li $v0 0
 		li $v1 0
 		assign_loop:
-		beq $t0 $t1 assign_loop_out
+		ble $t0 $t1 assign_loop_out
 			mul $t3 $t1 $t4
 			add $t5 $t3 $t2
 			lw $t5 0($t5) #ID
@@ -177,6 +218,159 @@ get_next_location:
 		loc_outer_exit:
 		li $v0 0
 		jr $ra
+
+
+
+
+move_main:
+	addi $sp $sp -4
+	sw $ra 0($sp)
+	li $t0 20
+	li $t1 18
+	sub $a0 $t0 $a0
+	sub $a1 $t1 $a1
+	jal sb_arctan
+	sw $v0 ANGLE($0)
+	li $t0 20
+	li $t1 18
+	sub $a0 $t0 $a0
+	sub $a1 $t1 $a1
+	jal dist
+	li $t0 1
+	sw $t0 ANGLE_CONTROL($0)
+	li $t0 10
+	sw $t0 VELOCITY($0)
+	move $a0 $v0
+	jal stop_timer
+	sw $t0 PICKUP($0)
+	li $t0 180
+	sw $t0 ANGLE($0)
+	li $t0 0
+	sw $t0 ANGLE_CONTROL($0)
+	move $a0 $v0
+	jal stop_timer
+	lw $ra 0($sp)
+	addi $sp $sp 4
+	jr $ra
+		
+
+main_target:
+        la $t9 location
+        sw $t9 GET_KERNEL_LOCATIONS($0)
+
+        li $t6 40
+        addi $t9 $t9 4
+        mt_outer:
+        bge $v0 26 mt_outer_exit
+            mt_inner:
+            bge $v1 33 mt_inner_exit
+                mul $t8 $t6 $v0
+                add $t8 $t8 $v1
+                add $t8 $t8 $t9
+                lb $t8 0($t8)
+                blt $t8 4 mt_next_loc
+                jr $ra
+                mt_next_loc:
+            addi $v1 $v1 1
+            j mt_inner
+            mt_inner_exit:
+
+            li $v1 7
+        addi $v0 $v0 1
+        j mt_outer
+        mt_outer_exit:
+        li $v0 12
+        jr $ra
+
+
+dist:
+	mul $a0, $a0, $a0 # x^2
+	mul $a1, $a1, $a1 # y^2
+	add $v0, $a0, $a1 # x^2 + y^2
+	mtc1 $v0, $f0
+	cvt.s.w $f0, $f0 # float(x^2 + y^2)
+	sqrt.s $f0, $f0 # sqrt(x^2 + y^2)
+	cvt.w.s $f0, $f0 # int(sqrt(...))
+	mfc1 $v0, $f0
+	jr $ra
+
+
+.globl sb_arctan
+sb_arctan:
+li $v0, 0 # angle = 0;
+abs $t0, $a0 # get absolute values
+abs $t1, $a1
+ble $t1, $t0, no_TURN_90
+## if (abs(y) > abs(x)) { rotate 90 degrees }
+move $t0, $a1 # int temp = y;
+neg $a1, $a0 # y = -x;
+move $a0, $t0 # x = temp;
+li $v0, 90 # angle = 90;
+no_TURN_90:
+bgez $a0, pos_x # skip if (x >= 0)
+## if (x < 0)
+add $v0, $v0, 180 # angle += 180;
+pos_x:
+mtc1 $a0, $f0
+mtc1 $a1, $f1
+cvt.s.w $f0, $f0 # convert from ints to floats
+cvt.s.w $f1, $f1
+div.s $f0, $f1, $f0 # float v = (float) y / (float) x;
+mul.s $f1, $f0, $f0 # v^^2
+mul.s $f2, $f1, $f0 # v^^3
+l.s $f3, three # load 3.0
+div.s $f3, $f2, $f3 # v^^3/3
+sub.s $f6, $f0, $f3 # v - v^^3/3
+mul.s $f4, $f1, $f2 # v^^5
+l.s $f5, five # load 5.0
+div.s $f5, $f4, $f5 # v^^5/5
+add.s $f6, $f6, $f5 # value = v - v^^3/3 + v^^5/5
+l.s $f8, PI # load PI
+div.s $f6, $f6, $f8 # value / PI
+l.s $f7, F180 # load 180.0
+mul.s $f6, $f6, $f7 # 180.0 * value / PI
+cvt.w.s $f6, $f6 # convert "delta" back to integer
+mfc1 $t0, $f6
+add $v0, $v0, $t0 # angle += delta
+jr $ra
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # The contents of this file are not graded, it exists purely as a reference solution that you can use
 
 
@@ -620,7 +814,7 @@ jr $ra
 
 
 stop_timer:
-li $t0 8
+li $t0 8000
 mul $a0 $a0 $t0
 li $t0 3
 div $a0 $a0 $t0
@@ -730,7 +924,7 @@ jr $ra
 
 
 infinite:
-        j       infinite              # Don't remove this! If this is removed, then your code will not be graded!!!
+        j       infinite              # Don't remov this! If this is removed, then your code will not be graded!!
 
 .kdata
 chunkIH:    .space 8  #TODO: Decrease this
