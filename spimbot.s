@@ -43,7 +43,7 @@ has_puzzle:        .word 0
 anchor: 		   .word 0
 puzzle:      .half 0:2000             
 heap:        .half 0:2000
-location:    .byte 0:400
+location:    .byte 0:1700
 minibot:	 .word 0:30
 #### Puzzle
 
