@@ -28,6 +28,13 @@ REQUEST_PUZZLE_ACK      = 0xffff00d8  ## Puzzle
 
 PICKUP                  = 0xffff00f4
 
+SPAWN_MINIBOT           = 0xffff00dc
+BUILD_SILO              = 0xffff2000
+SELECT_IDLE             = 0xffff00e4
+SET_TARGET				= 0xffff00e8
+GET_KERNEL_LOCATIONS    = 0xffff200c
+SELECT_ID 				= 0xffff2004
+GET_MINIBOT				= 0xffff2014
 # Add any MMIO that you need here (see the Spimbot Documentation)
 
 ### Puzzle
@@ -35,6 +42,8 @@ GRIDSIZE = 16
 has_puzzle:        .word 0                         
 puzzle:      .half 0:2000             
 heap:        .half 0:2000
+location:    .byte 0:400
+minibot:	 .word 0:30
 #### Puzzle
 
 
@@ -53,7 +62,7 @@ main:
 
 		addi $sp $sp -4
 		sw $s0 0($sp)
-        li $s0 100
+        li $s0 4
         puzzle_loop:
         beq $s0 $0 go_collect
         la $t1 has_puzzle
@@ -76,9 +85,98 @@ main:
         j puzzle_loop
 
 go_collect:
+		li $t0 1
+		sw $t0 SPAWN_MINIBOT($0)
+		sw $t0 SELECT_IDLE($0)
+		li $t0 0x00001414
+		sw $t0 SET_TARGET($0)
+		
+		li $a0 50000
+		jal stop_timer
+		li $t0 0x00001414
+		sw $t0 BUILD_SILO($0)
+		li $t1 0
+		spawn_loop:
+		beq $t1 1 spawn_loop_end
+		li $t0 1
+		sw  $t0 SPAWN_MINIBOT($0)
+		addi $t1 $t1 1
+		j spawn_loop
+		spawn_loop_end:
+		
+		
+		jal assign_minibot
 
+		li $a0 10000
+		jal stop_timer
+
+		sw $t0 SELECT_IDLE($0)
+		li $t0 0x00001414
+		sw $t0 SET_TARGET($0)
+		li $a0 10000
+		jal stop_timer
+		j spawn_loop_end
 		j infinite
 
+
+
+assign_minibot:
+		addi $sp $sp -4
+		sw $ra 0($sp)
+		la $t0 minibot
+		sw $t0 GET_MINIBOT($0)
+		lw $t0 minibot($0)
+		li $t1 0
+		li $t4 8
+		la $t2 minibot
+		addi $t2 $t2 4
+		addi $t0 $t0 -1
+		li $v0 0
+		li $v1 0
+		assign_loop:
+		beq $t0 $t1 assign_loop_out
+			mul $t3 $t1 $t4
+			add $t5 $t3 $t2
+			lw $t5 0($t5) #ID
+			sw $t5 SELECT_ID($0)
+			jal get_next_location
+			sll $t8 $v0 8
+			or $t8 $t8 $v1
+			sw $t8 SET_TARGET($0)
+		addi $t1 $t1 1
+		j assign_loop
+		assign_loop_out:
+		lw $ra 0($sp)
+		addi $sp $sp 4
+		jr $ra
+
+get_next_location:
+		la $t9 location
+		sw $t9 GET_KERNEL_LOCATIONS($0)
+		
+		li $t6 40
+		addi $t9 $t9 4
+		loc_outer:
+		bge $v0 40 loc_outer_exit
+			loc_inner:
+			bge $v1 40 loc_inner_exit
+				mul $t8 $t6 $v0
+				add $t8 $t8 $v1
+				add $t8 $t8 $t9
+				lb $t8 0($t8)
+				blt $t8 4 next_loc
+				jr $ra
+				next_loc:
+			addi $v1 $v1 1
+			j loc_inner
+			loc_inner_exit:
+
+			li $v1 0
+		addi $v0 $v0 1
+		j loc_outer
+		loc_outer_exit:
+		li $v0 0
+		jr $ra
 # The contents of this file are not graded, it exists purely as a reference solution that you can use
 
 
