@@ -70,24 +70,24 @@ main:
 		sw $s0 0($sp)
         li $s0 4
         puzzle_loop:
-        beq $s0 $0 go_collect
-        la $t1 has_puzzle
-        sw $0  0($t1)
-        la $a0 puzzle
-        la $t0 REQUEST_PUZZLE
-        sw $a0 0($t0)
-        la $a1 heap
-        li $a2 0
-        li $a3 0
-        while:
-            lw $t2 0($t1)
-            bne $0 $t2 start_solving
-        j while
-        start_solving:
-        jal slow_solve_dominosa
-        la $a1 heap
-        sw $a1 SUBMIT_SOLUTION
-		addi $s0 $s0 -1
+            beq $s0 $0 go_collect ## when solved 4 puzzles go collect
+            la $t1 has_puzzle
+            sw $0  0($t1)
+            la $a0 puzzle
+            la $t0 REQUEST_PUZZLE
+            sw $a0 0($t0)
+            la $a1 heap
+            li $a2 0
+            li $a3 0
+            while:
+                lw $t2 0($t1)
+                bne $0 $t2 start_solving
+            j while
+            start_solving:
+            jal slow_solve_dominosa
+            la $a1 heap
+            sw $a1 SUBMIT_SOLUTION
+	    addi $s0 $s0 -1
         j puzzle_loop
 
 
@@ -98,7 +98,7 @@ go_collect:
 
     
     li $a0 20
-	li $a1 18
+    li $a1 18
     jal sb_arctan
     move $s0 $v0
     li $a0 20
@@ -110,9 +110,10 @@ go_collect:
     li $t0 10
     sw $t0 VELOCITY($0)
     move $a0 $v0
-    jal stop_timer
+    jal stop_timer ## move to 20 18?
 	
-	get_more:
+
+    get_more:
 	li $v0 12
 	li $v1 7
 	jal main_target
@@ -120,7 +121,7 @@ go_collect:
 	move $a1 $v1
 	jal move_main
 
-	j get_more
+    j get_more
 
 
 
