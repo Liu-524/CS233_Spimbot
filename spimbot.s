@@ -283,6 +283,48 @@ main_target:
         jr $ra
 
 
+move_to_center: ## moves the bot to the center of the current grid
+        sub $sp $sp 4
+        sw $ra 0($sp)
+        lw $t0 BOT_X
+        lw $t1 BOT_Y
+        li $t2 8
+        rem $t3 $t0 $t2
+        rem $t4 $t1 $t2
+        li $a0 10
+        sw $a0 VELOCITY
+        li $a1 4
+        ble $t3 $a1 mr
+        li $a0 180
+        sw $a0 ANGLE
+        j lr_end
+        sw $zero ANGLE
+        lr_end:
+        li $a0 1
+        sw $a0 ANGLE_CONTROL
+        lr_loop:
+                lw $t0 BOT_X
+                rem $t3 $t0 $t2
+                blt $t3 $a1 lr_loop
+        ble $t4 $a1 md
+        li $a0 270
+        sw $a0 ANGLE
+        j ud_end
+        li $a0 90
+        sw $a0 ANGLE
+        ud_end:
+        li $a0 1
+        sw $a0 ANGLE_CONTROL
+        ud_loop:
+                lw $t1 BOT_Y
+                rem $t4 $t1 $t2
+                blt $t4 $a1 ud_loop
+        sw $zero VELOCITY
+        lw $ra 0($sp)
+        addi $sp $sp 4
+        jr $ra
+
+
 dist:
 	mul $a0, $a0, $a0 # x^2
 	mul $a1, $a1, $a1 # y^2
