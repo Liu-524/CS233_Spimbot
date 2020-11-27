@@ -326,6 +326,93 @@ move_to_center: ## moves the bot to the center of the current grid
         jr $ra
 
 
+move_east:
+        beq     $a0, $zero, return
+        sub     $sp, $sp, 4
+        sw      $ra, 0($sp)
+        lw      $t0, BOT_X
+        addi    $t0, $t0, 8
+        sw      $zero, ANGLE
+        li      $t1, 1
+        sw      $t1, ANGLE_CONTROL
+        l1:     
+                lw      $t1, BOT_X
+                bge     $t1, $t0, e1
+                j       l1
+        e1:
+        sub     $a0, $a0, 1
+        jal     move_east
+        lw      $ra, 0($sp)
+        addi    $sp, $sp, 4
+        j       return
+
+move_west:
+        beq     $a0, $zero, return
+        sub     $sp, $sp, 4
+        sw      $ra, 0($sp)
+        lw      $t0, BOT_X
+        addi    $t0, $t0, -8
+        li      $t1, 180
+        sw      $t1, ANGLE
+        li      $t1, 1
+        sw      $t1, ANGLE_CONTROL
+        l2:     
+                lw      $t1, BOT_X
+                ble     $t1, $t0, e2
+                j       l2
+        e2:
+        sub     $a0, $a0, 1
+        jal     move_west
+        lw      $ra, 0($sp)
+        addi    $sp, $sp, 4
+        j       return
+
+move_south:
+        beq     $a0, $zero, return
+        sub     $sp, $sp, 4
+        sw      $ra, 0($sp)
+        lw      $t0, BOT_Y
+        addi    $t0, $t0, 8
+        li      $t1, 90
+        sw      $t1, ANGLE
+        li      $t1, 1
+        sw      $t1, ANGLE_CONTROL
+        l3:     
+                lw      $t1, BOT_Y
+                bge     $t1, $t0, e3
+                j       l3
+        e3:
+        sub     $a0, $a0, 1
+        jal     move_south
+        lw      $ra, 0($sp)
+        addi    $sp, $sp, 4
+        j       return
+
+move_north:
+        beq     $a0, $zero, return
+        sub     $sp, $sp, 4
+        sw      $ra, 0($sp)
+        lw      $t0, BOT_Y
+        addi    $t0, $t0, -8
+        li      $t1, 270
+        sw      $t1, ANGLE
+        li      $t1, 1
+        sw      $t1, ANGLE_CONTROL
+        l4:     
+                lw      $t1, BOT_Y
+                ble     $t1, $t0, e4
+                j       l4
+        e4:
+        sub     $a0, $a0, 1
+        jal     move_north
+        lw      $ra, 0($sp)
+        addi    $sp, $sp, 4
+        j       return
+
+return:
+        jr $ra
+
+
 dist:
 	mul $a0, $a0, $a0 # x^2
 	mul $a1, $a1, $a1 # y^2
