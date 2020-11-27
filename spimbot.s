@@ -239,35 +239,76 @@ get_next_location:
 
 
 move_main:
-	addi $sp $sp -4
+	addi $sp $sp -12
 	sw $ra 0($sp)
+        sw $s0 4($sp)
+        sw $s1 8($sp)
 	li $t0 20
 	li $t1 18
-	sub $a0 $t0 $a0
-	sub $a1 $t1 $a1
-	jal sb_arctan
-	sw $v0 ANGLE($0)
-	li $t0 20
-	li $t1 18
-	sub $a0 $t0 $a0
-	sub $a1 $t1 $a1
-	jal dist
-	li $t0 1
-	sw $t0 ANGLE_CONTROL($0)
-	li $t0 10
-	sw $t0 VELOCITY($0)
-	move $a0 $v0
-	jal stop_timer
-	sw $t0 PICKUP($0)
-	li $t0 180
-	sw $t0 ANGLE($0)
-	li $t0 0
-	sw $t0 ANGLE_CONTROL($0)
-	move $a0 $v0
-	jal stop_timer
+	sub $s0 $t0 $a0
+	sub $s1 $t1 $a1
+        blt $s0 $zero mw
+        move $a0 $s0
+        jal move_east
+        j ns
+mw:
+        sub $a0 $zero $s0
+        jal move_west
+ns:
+        blt $s1 $zero mn
+        move $a0 $s1
+        jal move_south
+        j m_end
+mn:
+        sub $a0 $zero $s1
+        jal move_north
+m_end:
+        li $t0 1
+        sw $t0 PICKUP
+        blt $s0 $zero me
+        move $a0 $s0
+        jal move_west
+        j ns2
+me:
+        sub $a0 $zero $s0
+        jal move_east
+ns2:
+        blt $s1 $zero ms
+        move $a0 $s1
+        jal move_north
+        j mm_end
+ms:
+        sub $a0 $zero $s1
+        jal move_south
+mm_end:
 	lw $ra 0($sp)
-	addi $sp $sp 4
-	jr $ra
+        lw $s0 4($sp)
+        lw $s1 8($sp)
+        add $sp $sp 12
+        j return
+	# jal sb_arctan
+	# sw $v0 ANGLE($0)
+	# li $t0 20
+	# li $t1 18
+	# sub $a0 $t0 $a0
+	# sub $a1 $t1 $a1
+	# jal dist
+	# li $t0 1
+	# sw $t0 ANGLE_CONTROL($0)
+	# li $t0 10
+	# sw $t0 VELOCITY($0)
+	# move $a0 $v0
+	# jal stop_timer
+	# sw $t0 PICKUP($0)
+	# li $t0 180
+	# sw $t0 ANGLE($0)
+	# li $t0 0
+	# sw $t0 ANGLE_CONTROL($0)
+	# move $a0 $v0
+	# jal stop_timer
+	# lw $ra 0($sp)
+	# addi $sp $sp 4
+	# jr $ra
 		
 
 main_target:
