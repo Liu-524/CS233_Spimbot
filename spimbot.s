@@ -95,22 +95,37 @@ main:
 
 go_collect:
 
-
+        li $t0 10
+        sw $t0 VELOCITY
+        li $a0 4
+        jal move_south
+        li $a0 6
+        jal move_east
+        li $a0 6
+        jal move_south
+        li $a0 6
+        jal move_east
+        li $a0 5
+        jal move_south
+        li $a0 8
+        jal move_east
+        li $a0 3
+        jal move_south ## moves the bot to the center of the map
     
-    li $a0 20
-    li $a1 18
-    jal sb_arctan
-    move $s0 $v0
-    li $a0 20
-    li $a1 18
-    jal dist
-    sw $s0 ANGLE($0)
-    li $t0 1
-    sw $t0 ANGLE_CONTROL($0)
-    li $t0 10
-    sw $t0 VELOCITY($0)
-    move $a0 $v0
-    jal stop_timer ## move to 20 18?
+#     li $a0 20
+#     li $a1 18
+#     jal sb_arctan
+#     move $s0 $v0
+#     li $a0 20
+#     li $a1 18
+#     jal dist
+#     sw $s0 ANGLE($0)
+#     li $t0 1
+#     sw $t0 ANGLE_CONTROL($0)
+#     li $t0 10
+#     sw $t0 VELOCITY($0)
+#     move $a0 $v0
+#     jal stop_timer ## move to 20 18?
 	
 
     get_more:
@@ -1097,10 +1112,11 @@ bonk_interrupt:
 		
 #Fill in your code here
 
-		li $k0 0
-        or $k0 $k0 VELOCITY
-        li $a0 -10
-        sw $a0 0($k0)
+        li $a0 180
+        sw $a0 ANGLE
+        sw $zero ANGLE_CONTROL ## turn around
+        li $a0 10
+        sw $a0 VELOCITY
         li $a0 1000
         li $k0 0
         wait4k:
@@ -1108,8 +1124,9 @@ bonk_interrupt:
         addi $k0 $k0 1
         j wait4k
         out4k:
-        la $k0 VELOCITY
-        sw $0 0($k0)
+        sw $0 VELOCITY
+        li $a0 1
+        sw $a0 BONK_ACK
 
         j       interrupt_dispatch      # see if other interrupts are waiting
 
