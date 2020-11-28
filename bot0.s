@@ -37,6 +37,10 @@ SELECT_ID 				= 0xffff2004
 GET_MINIBOT				= 0xffff2014
 # Add any MMIO that you need here (see the Spimbot Documentation)
 
+
+CTR_LEFT = 15
+CTR_TOP = 8
+
 ### Puzzle
 GRIDSIZE = 16
 has_puzzle:        .word 0                         
@@ -127,13 +131,12 @@ go_collect:
 #     move $a0 $v0
 #     jal stop_timer ## move to 20 18?
 	
-
+	li $v0 CTR_LEFT
+	li $v1 CTR_TOP
     get_more:
-	li $v0 12
-	li $v1 7
 	jal main_target
-	move $a0 $v0
-	move $a1 $v1
+	move $a0 $v1
+	move $a1 $v0
 	jal move_main
 
     j get_more
@@ -243,49 +246,131 @@ move_main:
 	sw $ra 0($sp)
         sw $s0 4($sp)
         sw $s1 8($sp)
-	li $t0 20
-	li $t1 20
-	sub $s0 $t0 $a0
-	sub $s1 $t1 $a1
-        blt $s0 $zero mw
-        move $a0 $s0
-        jal move_east
-        j ns
-mw:
-        sub $a0 $zero $s0
-        jal move_west
-ns:
-        blt $s1 $zero mn
-        move $a0 $s1
-        jal move_south
-        j m_end
-mn:
-        sub $a0 $zero $s1
-        jal move_north
-m_end:
-        li $t0 1
-        sw $t0 PICKUP
-        blt $s0 $zero me
-        move $a0 $s0
-        jal move_west
-        j ns2
-me:
-        sub $a0 $zero $s0
-        jal move_east
-ns2:
-        blt $s1 $zero ms
-        move $a0 $s1
-        jal move_north
-        j mm_end
-ms:
-        sub $a0 $zero $s1
-        jal move_south
-mm_end:
-	lw $ra 0($sp)
-        lw $s0 4($sp)
-        lw $s1 8($sp)
-        add $sp $sp 12
-        j return
+	lw $t0 BOT_X #x
+	lw $t1 BOT_Y #y
+	li $t8 8
+	div $t0 $t0 $t8
+	div $t1 $t1 $t8
+	li $t2 40
+	sub $t2 $t2 $t1 #40 - y
+	
+	sub $s0 $a0 $t0
+	sub $s1 $a1 $t1
+	
+
+	ble $s0 $0 x_offset_neg
+
+x_offset_pos:
+	ble $s1 $0 xpyn
+	xpyp:
+		ble $t0 $t1 xy_move		
+		j yx_move
+	xpyn:
+		ble $t0 $t2 xy_move
+		j yx_move
+x_offset_neg:
+	ble $s1 $0 xnyn 
+	xnyp:
+		ble $t0 $t4 yx_move
+		j xy_move
+	xnyn:
+		ble $t0 $t1 yx_move
+		j xy_move
+
+xy_move:
+	move $a0 $s0
+	abs $a0 $a0
+	ble $s0 $0 xleft
+	xright:
+		li $t8 0
+		sw $t8 ANGLE
+		li $t8 1
+		sw $t8 ANGLE_CONTROL
+		li $t8 10
+		sw $t8 VELOCITY
+		jal stop_timer
+		
+		ble $s1 $0 xyup
+		j xydown
+	xleft:
+		li $t8 180
+		sw $t8 ANGLE
+		li $t8 1
+		sw $t8 ANGLE_CONTROL
+		li $t8 10
+		sw $t8 VELOCITY
+		jal stop_timer
+		ble $s1 $0 xyup
+		j xydown
+        xyup:
+            li $t8 270
+            sw $t8 ANGLE
+            li $t8 1
+            sw $t8 ANGLE_CONTROL
+            li $t8 10
+            sw $t8 VELOCITY
+			move $a0 $s1
+			neg $a0 $a0
+            jal stop_timer
+            j move_end
+        xydown:
+            li $t8 90
+            sw $t8 ANGLE
+            li $t8 1
+            sw $t8 ANGLE_CONTROL
+            li $t8 10
+            sw $t8 VELOCITY
+			move $a0 $s1
+            jal stop_timer
+			j move_end
+	
+yx_move:
+	ble $s1 $0 yup
+	ydown:
+        li $t8 90
+        sw $t8 ANGLE
+        li $t8 1
+        sw $t8 ANGLE_CONTROL
+        li $t8 10
+        sw $t8 VELOCITY
+		move $a0 $s1
+        jal stop_timer
+
+        ble $s1 $0 yxleft
+        j yxright
+    yup:
+        li $t8 270
+        sw $t8 ANGLE
+        li $t8 1
+        sw $t8 ANGLE_CONTROL
+        li $t8 10
+        sw $t8 VELOCITY
+		move $a0 $s1
+		neg $a0 $a0
+        jal stop_timer
+        ble $s1 $0 yxleft
+        j yxright
+        yxleft:
+            li $t8 180
+            sw $t8 ANGLE
+            li $t8 1
+            sw $t8 ANGLE_CONTROL
+            li $t8 10
+            sw $t8 VELOCITY
+            move $a0 $s0
+            neg $a0 $a0
+            jal stop_timer
+            j move_end
+        yxright:
+            li $t8 0
+            sw $t8 ANGLE
+            li $t8 1
+            sw $t8 ANGLE_CONTROL
+            li $t8 10
+            sw $t8 VELOCITY
+            move $a0 $s0
+			jal stop_timer
+			j move_end
 	# jal sb_arctan
 	# sw $v0 ANGLE($0)
 	# li $t0 20
@@ -309,7 +394,12 @@ mm_end:
 	# lw $ra 0($sp)
 	# addi $sp $sp 4
 	# jr $ra
-		
+	move_end:
+		lw $ra 0($sp)
+		lw $s0 4($sp)
+		lw $s1 8($sp)
+		addi $sp $sp 12
+		jr $ra
 
 main_target:
         la $t9 location
@@ -318,33 +408,32 @@ main_target:
         li $t6 40
         addi $t9 $t9 4
         mt_outer:
-        bge $v0 26 mt_outer_exit
+        bge $v0 33 mt_outer_exit
             mt_inner:
-            bge $v1 33 mt_inner_exit
+            bge $v1 26 mt_inner_exit
                 mul $t8 $t6 $v0
                 add $t8 $t8 $v1
                 add $t8 $t8 $t9
                 lb $t8 0($t8)
                 blt $t8 4 mt_next_loc
+				move $a0 $v0
+				move $s0 $v0
+
                 jr $ra
                 mt_next_loc:
             addi $v1 $v1 1
             j mt_inner
             mt_inner_exit:
 
-            li $v1 7
+            li $v1 CTR_LEFT
         addi $v0 $v0 1
         j mt_outer
         mt_outer_exit:
-        li $v0 12
+        li $v0 CTR_TOP
 
 ###print result
 		
-		move $a0 $v0
-		li $v0 PRINT_INT
-		syscall
-		move $a0 $v1
-		syscall
+		
         jr $ra
 
 
@@ -1008,14 +1097,18 @@ jr $ra
 
 
 stop_timer:
+
+beq $a0 $0 stop_out
+
 li $t0 8000
 mul $a0 $a0 $t0
-li $t0 3
+li $t0 6
 div $a0 $a0 $t0
 li $t0 0
 waitback:
-beq $t0 $a0 stop_out
+bge $t0 $a0 stop_out
 addi $t0 $t0 1
+sw $t0 PICKUP($0)
 j waitback
 stop_out:
 la $t0 VELOCITY
