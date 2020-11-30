@@ -98,23 +98,44 @@ main:
 
 
 go_collect:
-
-        li $t0 10
-        sw $t0 VELOCITY
-        li $a0 4
-        jal move_south
-        li $a0 6
-        jal move_east
-        li $a0 6
-        jal move_south
-        li $a0 6
-        jal move_east
-        li $a0 5
-        jal move_south
-        li $a0 8
-        jal move_east
-        li $a0 5
-        jal move_south ## moves the bot to the center of the map
+        lw $t0 BOT_X
+        li $t1 4
+        bne $t0 $t1 bottom_right
+        top_left:
+            li $t0 10
+            sw $t0 VELOCITY
+            li $a0 4
+            jal move_south
+            li $a0 6
+            jal move_east
+            li $a0 6
+            jal move_south
+            li $a0 6
+            jal move_east
+            li $a0 5
+            jal move_south
+            li $a0 8
+            jal move_east
+            li $a0 5
+            jal move_south ## moves the bot from top left to the center of the map
+            j mm_end
+        bottom_right:
+            li $t0 10
+            sw $t0 VELOCITY
+            li $a0 4
+            jal move_north
+            li $a0 6
+            jal move_west
+            li $a0 6
+            jal move_north
+            li $a0 6
+            jal move_west
+            li $a0 5
+            jal move_north
+            li $a0 7
+            jal move_west
+            li $a0 4
+            jal move_north ## moves the bot from bottom right to the center of the map
     
 #     li $a0 20
 #     li $a1 18
@@ -130,7 +151,7 @@ go_collect:
 #     sw $t0 VELOCITY($0)
 #     move $a0 $v0
 #     jal stop_timer ## move to 20 18?
-	
+	mm_end:
 	li $v0 CTR_LEFT
 	li $v1 CTR_TOP
     get_more:
