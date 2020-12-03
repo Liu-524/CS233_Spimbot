@@ -39,7 +39,7 @@ GET_MINIBOT				= 0xffff2014
 
 
 CTR_LEFT = 15
-CTR_TOP = 8
+CTR_TOP = 7
 
 ### Puzzle
 GRIDSIZE = 16
@@ -49,8 +49,9 @@ puzzle:      .half 0:2000
 heap:        .half 0:2000
 location:    .byte 0:1700
 minibot:	 .word 0:30
-#### Puzzle
 
+#### Puzzle
+BNK_AGL: .word 45
 three: .float 3.0
 five: .float 5.0
 PI: .float 3.141592
@@ -242,9 +243,13 @@ move_main:
 #	div $t1 $t1 $t8
 	mul $a0 $a0 $t8
 	mul $a1 $a1 $t8
-	li $t2 320
-	sub $t2 $t2 $t1 #320 - y
 	
+	slti $t2 $t0 160 #x < 160
+	slti $t3 $t1 160 #y < 160
+	not $t4 $t2
+	not $t5 $t3
+	
+
 	sub $s0 $a0 $t0
 	sub $s1 $a1 $t1
 	
@@ -254,18 +259,18 @@ move_main:
 x_offset_pos:
 	ble $s1 $0 xpyn
 	xpyp:
-		ble $t0 $t1 xy_move		
+		ble $t3 $t2 xy_move		
 		j yx_move
 	xpyn:
-		ble $t0 $t2 xy_move
+		ble $t5 $t2 xy_move
 		j yx_move
 x_offset_neg:
 	ble $s1 $0 xnyn 
 	xnyp:
-		ble $t0 $t4 yx_move
+		ble $t5 $t2 yx_move
 		j xy_move
 	xnyn:
-		ble $t0 $t1 yx_move
+		ble $t3 $t2 yx_move
 		j xy_move
 
 xy_move:
@@ -362,29 +367,6 @@ yx_move:
             move $a0 $s0
 			jal stop_timer
 			j move_end
-	# jal sb_arctan
-	# sw $v0 ANGLE($0)
-	# li $t0 20
-	# li $t1 18
-	# sub $a0 $t0 $a0
-	# sub $a1 $t1 $a1
-	# jal dist
-	# li $t0 1
-	# sw $t0 ANGLE_CONTROL($0)
-	# li $t0 10
-	# sw $t0 VELOCITY($0)
-	# move $a0 $v0
-	# jal stop_timer
-	# sw $t0 PICKUP($0)
-	# li $t0 180
-	# sw $t0 ANGLE($0)
-	# li $t0 0
-	# sw $t0 ANGLE_CONTROL($0)
-	# move $a0 $v0
-	# jal stop_timer
-	# lw $ra 0($sp)
-	# addi $sp $sp 4
-	# jr $ra
 	move_end:
 		lw $ra 0($sp)
 		lw $s0 4($sp)
@@ -1241,26 +1223,44 @@ interrupt_dispatch:                     # Interrupt:
         j       done
 
 bonk_interrupt:
-        sw      $0, BONK_ACK
+        
+		lw $a0 BNK_AGL($0)
+		addi $a0 $a0 90
+		li $v0 340
+		ble $a0 $v0 bnk_conti
+		li $a0 45
+		bnk_conti:
+		sw $a0 ANGLE($0)
+		sw $a0 BNK_AGL($0)
+		li $a0 1
+		sw $a0 ANGLE_CONTROL($0)
+		li $a0 10
+		sw $a0 VELOCITY($0)
+		li $v0 400
+		bnk_wait:
+		beq $a0 $v0 bnk_out
+		addi $a0 $a0 1
+		j bnk_wait
+		bnk_out:
 		
 #Fill in your code here
-
-        li $a0 180
-        sw $a0 ANGLE
-        sw $zero ANGLE_CONTROL ## turn around
-        li $a0 10
-        sw $a0 VELOCITY
-        li $a0 1000
-        li $k0 0
-        wait4k:
-        beq $k0 $a0 out4k
-        addi $k0 $k0 1
-        j wait4k
-        out4k:
-        sw $0 VELOCITY
-        li $a0 1
-        sw $a0 BONK_ACK
-
+		
+# li $a0 180
+#       sw $a0 ANGLE
+#       sw $zero ANGLE_CONTROL ## turn around
+#       li $a0 10
+#        sw $a0 VELOCITY
+#        li $a0 1000
+#        li $k0 0
+#        wait4k:
+#        beq $k0 $a0 out4k
+#        addi $k0 $k0 1
+#        j wait4k
+#        out4k:
+#        sw $0 VELOCITY
+#        li $a0 1
+#        sw $a0 BONK_ACK
+		sw $0, BONK_ACK
         j       interrupt_dispatch      # see if other interrupts are waiting
 
 request_puzzle_interrupt:
@@ -1274,7 +1274,7 @@ request_puzzle_interrupt:
         j	interrupt_dispatch
 
 timer_interrupt:
-        sw      $0, TIMER_ACK
+		sw      $0, TIMER_ACK
 #Fill in your code here
         j   interrupt_dispatch
 non_intrpt:                             # was some non-interrupt
