@@ -249,10 +249,15 @@ get_next_location:
 		la $t9 location
 		sw $t9 GET_KERNEL_LOCATIONS($0)
 		
-		li $t6 40
+		#li $a0 2334	# a0:seed
+		li $a1 100000	# bound
+		li $v0 42
+		syscall
+		move $t6 $a0
 		addi $t9 $t9 4
+		li $v0 0
 		loc_outer:
-		bge $v0 40 loc_outer_exit
+		bge $v1 40 loc_outer_exit
 			loc_inner:
 			bge $v1 40 loc_inner_exit
 				mul $t8 $t6 $v0
