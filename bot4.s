@@ -35,6 +35,7 @@ SET_TARGET				= 0xffff00e8
 GET_KERNEL_LOCATIONS    = 0xffff200c
 SELECT_ID 				= 0xffff2004
 GET_MINIBOT				= 0xffff2014
+SELECT_REGION           = 0xffff00e0
 # Add any MMIO that you need here (see the Spimbot Documentation)
 
 
@@ -77,7 +78,7 @@ main:
 		#################################
 		addi $sp $sp -4
 		sw $s0 0($sp)
-        li $s0 10
+        li $s0 12
         puzzle_loop:
             beq $s0 $0 go_collect ## when solved 4 puzzles go collect
             la $t1 has_puzzle
@@ -138,7 +139,20 @@ go_collect:
 
 	test_field:
 	#your code
-
+        li $t0, 1
+        sw $t0, SPAWN_MINIBOT
+        li $t0, 1
+        sw $t0, SPAWN_MINIBOT
+        li $t0, 1
+        sw $t0, SPAWN_MINIBOT
+        li $t0, 0x00001a06
+        sw $t0, SELECT_IDLE
+        sw $t0, SET_TARGET
+        li $a0, 500
+        jal stop_timer
+        li $t0, 0x00001a06  ## build silo at (6,26)
+        sw $t0, BUILD_SILO
+        jal assign_minibot
 	j test_field	
 
 
