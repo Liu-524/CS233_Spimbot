@@ -49,9 +49,7 @@ puzzle:      .half 0:2000
 heap:        .half 0:2000
 location:    .byte 0:1700
 minibot:	 .word 0:30
-path:		 .word 0:20  #idx = 0,1,2,3,4 
-path_index:  .word 0    #direction 0-right, 1-down, 2-left, 3-up. and cycles, this should be able to store 5
-
+test_bool:   .word 0
 
 #### Puzzle
 BNK_AGL: .word 45
@@ -74,12 +72,12 @@ main:
 
 #Fill in your code here
 		#################################
-		li $t0 300000
+		li $t0 6000000
 		sw $t0, TIMER
 		#################################
 		addi $sp $sp -4
 		sw $s0 0($sp)
-        li $s0 0
+        li $s0 10
         puzzle_loop:
             beq $s0 $0 go_collect ## when solved 4 puzzles go collect
             la $t1 has_puzzle
@@ -126,7 +124,6 @@ go_collect:
 	 li $t8 8
 	 mul $a0 $a0 $t8
      jal stop_timer ## move to 20 18?
-	
 	li $v0 CTR_LEFT
 	li $v1 CTR_TOP
     get_more:
@@ -134,9 +131,27 @@ go_collect:
 	move $a0 $v1
 	move $a1 $v0
 	jal move_main
-
+	lw $t8 test_bool
+	bne $t8 $0 test_field
     j get_more
-		
+
+
+	test_field:
+	#your code
+
+	j test_field	
+
+
+
+
+
+
+
+
+
+
+
+
 		li $t0 1
 		sw $t0 SPAWN_MINIBOT($0)
 		sw $t0 SELECT_IDLE($0)
@@ -1143,7 +1158,8 @@ request_puzzle_interrupt:
 timer_interrupt:
 		sw      $0, TIMER_ACK
 #Fill in your code here
-		
+		li $a0 1
+		sw $a0, test_bool
         j   interrupt_dispatch
 non_intrpt:                             # was some non-interrupt
         li      $v0, PRINT_STRING
