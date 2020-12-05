@@ -221,8 +221,8 @@ assign_minibot:
 			lw $t5 0($t5) #ID
 			sw $t5 SELECT_ID($0)
 			jal get_next_location
-			sll $t8 $v1 8
-			or $t8 $t8 $v0
+			sll $t8 $v0 8
+			or $t8 $t8 $v1
 			sw $t8 SET_TARGET($0)
 		addi $t1 $t1 1
 		j assign_loop
