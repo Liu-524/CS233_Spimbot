@@ -73,7 +73,7 @@ main:
 
 		addi $sp $sp -4
 		sw $s0 0($sp)
-        li $s0 0
+                li $s0 20
         puzzle_loop:
             beq $s0 $0 go_collect ## when solved 4 puzzles go collect
             la $t1 has_puzzle
@@ -134,7 +134,16 @@ go_collect:
 
 
 
+	spawn:	
 		
+		li $t1 0
+		spawn_loop:
+		beq $t1 3 spawn_loop_end
+		li $t0 1
+		sw  $t0 SPAWN_MINIBOT($0)
+		addi $t1 $t1 1
+		j spawn_loop
+		spawn_loop_end:
 		li $t0 1
 		sw $t0 SPAWN_MINIBOT($0)
 		sw $t0 SELECT_IDLE($0)
@@ -145,16 +154,7 @@ go_collect:
 		jal stop_timer
 		li $t0 0x00001414
 		sw $t0 BUILD_SILO($0)
-		li $t1 0
-		spawn_loop:
-		beq $t1 1 spawn_loop_end
-		li $t0 1
-		sw  $t0 SPAWN_MINIBOT($0)
-		addi $t1 $t1 1
-		j spawn_loop
-		spawn_loop_end:
-		
-		
+
 		jal assign_minibot
 
 		li $a0 10000
@@ -407,135 +407,6 @@ main_target:
 ###print result
 		
 		
-        jr $ra
-
-
-move_to_center: ## moves the bot to the center of the current grid
-        sub $sp $sp 4
-        sw $ra 0($sp)
-        lw $t0 BOT_X
-        lw $t1 BOT_Y
-        li $t2 8
-        rem $t3 $t0 $t2
-        rem $t4 $t1 $t2
-        li $a0 10
-        sw $a0 VELOCITY
-        li $a1 4
-        ble $t3 $a1 mr
-        li $a0 180
-        sw $a0 ANGLE
-        j lr_end
-        sw $zero ANGLE
-        lr_end:
-        li $a0 1
-        sw $a0 ANGLE_CONTROL
-        lr_loop:
-                lw $t0 BOT_X
-                rem $t3 $t0 $t2
-                blt $t3 $a1 lr_loop
-        ble $t4 $a1 md
-        li $a0 270
-        sw $a0 ANGLE
-        j ud_end
-        li $a0 90
-        sw $a0 ANGLE
-        ud_end:
-        li $a0 1
-        sw $a0 ANGLE_CONTROL
-        ud_loop:
-                lw $t1 BOT_Y
-                rem $t4 $t1 $t2
-                blt $t4 $a1 ud_loop
-        sw $zero VELOCITY
-        lw $ra 0($sp)
-        addi $sp $sp 4
-        jr $ra
-
-
-move_east:
-        beq     $a0, $zero, return
-        sub     $sp, $sp, 4
-        sw      $ra, 0($sp)
-        lw      $t0, BOT_X
-        addi    $t0, $t0, 8
-        sw      $zero, ANGLE
-        li      $t1, 1
-        sw      $t1, ANGLE_CONTROL
-        l1:     
-                lw      $t1, BOT_X
-                bge     $t1, $t0, e1
-                j       l1
-        e1:
-        sub     $a0, $a0, 1
-        jal     move_east
-        lw      $ra, 0($sp)
-        addi    $sp, $sp, 4
-        j       return
-
-move_west:
-        beq     $a0, $zero, return
-        sub     $sp, $sp, 4
-        sw      $ra, 0($sp)
-        lw      $t0, BOT_X
-        addi    $t0, $t0, -8
-        li      $t1, 180
-        sw      $t1, ANGLE
-        li      $t1, 1
-        sw      $t1, ANGLE_CONTROL
-        l2:     
-                lw      $t1, BOT_X
-                ble     $t1, $t0, e2
-                j       l2
-        e2:
-        sub     $a0, $a0, 1
-        jal     move_west
-        lw      $ra, 0($sp)
-        addi    $sp, $sp, 4
-        j       return
-
-move_south:
-        beq     $a0, $zero, return
-        sub     $sp, $sp, 4
-        sw      $ra, 0($sp)
-        lw      $t0, BOT_Y
-        addi    $t0, $t0, 8
-        li      $t1, 90
-        sw      $t1, ANGLE
-        li      $t1, 1
-        sw      $t1, ANGLE_CONTROL
-        l3:     
-                lw      $t1, BOT_Y
-                bge     $t1, $t0, e3
-                j       l3
-        e3:
-        sub     $a0, $a0, 1
-        jal     move_south
-        lw      $ra, 0($sp)
-        addi    $sp, $sp, 4
-        j       return
-
-move_north:
-        beq     $a0, $zero, return
-        sub     $sp, $sp, 4
-        sw      $ra, 0($sp)
-        lw      $t0, BOT_Y
-        addi    $t0, $t0, -8
-        li      $t1, 270
-        sw      $t1, ANGLE
-        li      $t1, 1
-        sw      $t1, ANGLE_CONTROL
-        l4:     
-                lw      $t1, BOT_Y
-                ble     $t1, $t0, e4
-                j       l4
-        e4:
-        sub     $a0, $a0, 1
-        jal     move_north
-        lw      $ra, 0($sp)
-        addi    $sp, $sp, 4
-        j       return
-
-return:
         jr $ra
 
 
