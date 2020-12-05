@@ -274,8 +274,6 @@ get_next_location:
 		jr $ra
 
 
-
-
 move_main:
 addi $sp $sp -12
 	sw $ra 0($sp)
