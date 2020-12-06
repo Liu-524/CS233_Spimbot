@@ -51,7 +51,7 @@ heap:        .half 0:2000
 location:    .byte 0:1700
 minibot:	 .word 0:30
 test_bool:   .word 0
-test_loc:    .word 0:5
+test_loc:    .word 0:10
 
 #### Puzzle
 BNK_AGL: .word 45
@@ -320,14 +320,58 @@ encode_five_locations:
 
 
 
+get_next_location:
+		la $t9 location
+		sw $t9 GET_KERNEL_LOCATIONS($0)
+		la $t4 test_loc
 
+		add $t9 4
+		li $t5 0 # find 10
+		loopp:
+		bge $t5 10 loop_over
+			li $a1 40
+			li $v0 42
+			syscall
+			move $t6 $a0
+			syscall
+			move $t7 $a0
+			loc_outer:
+			bge $t6 40 loc_outer_exit
+				loc_inner:
+				bge $t7 40 loc_inner_exit
+					mul $t8 $a1 $t6
+					add $t8 $t8 $t7
+					add $t8 $t8 $t9
+					lb $t8 0($t8)
+					bgt $t8 3 loc_outer_exit
+				addi $t7 1
+				j loc_inner
+				loc_inner_exit:
+				li $v1 0
+			addi $t6 1
+			j loc_outer
+			loc_outer_exit:
+		bgt $t8 3 gnls:
+			mul $t8 $t7 256
+			or $t8 $t6 $t8
+			sw $t8 0($t4)
+				move $a0 $t7
+				li $v0 1
+				syscall
+				move $a0 $t6
+				syscall
+			add $t4 4
+			add $t5 1
+		gnls:
+		j loopp
+		loop_over:
+		jr $ra
 
 get_next_location:
 		la $t9 location
 		sw $t9 GET_KERNEL_LOCATIONS($0)
 		
-		#li $a0 2334	# a0:seed
-		li $a1 100000	# bound
+		li $a1 40	# bound
 		li $v0 42
 		syscall
 		move $t6 $a0
