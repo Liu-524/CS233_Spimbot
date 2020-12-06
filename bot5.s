@@ -43,6 +43,7 @@ CTR_TOP = 7
 
 ### Puzzle
 GRIDSIZE = 16
+signal:      	   .word 0
 has_puzzle:        .word 0                         
 anchor: 		   .word 0
 puzzle:      .half 0:2000             
@@ -72,15 +73,23 @@ main:
 	    mtc0    $t4, $12
 
 #Fill in your code here
-		#################################
-		li $t0 6000000
+
+		
+		j center_main
+		main_dispatch:
+		lw $t0, signal
+		beq $t0, 0 mission_solve6
+		beq $t0, 1 mission_move_main
+		
+		mission_solve6:
+		lw $t0, TIMER
+		addi $t0 $t0 20000
 		sw $t0, TIMER
-		#################################
 		addi $sp $sp -4
 		sw $s0 0($sp)
-        li $s0 10
+        li $s0 6
         puzzle_loop:
-            beq $s0 $0 go_collect ## when solved 4 puzzles go collect
+            beq $s0 $0 out_puzzle_loop ## when solved 4 puzzles go collect
             la $t1 has_puzzle
             sw $0  0($t1)
             la $a0 puzzle
@@ -99,32 +108,41 @@ main:
             sw $a1 SUBMIT_SOLUTION
 	    addi $s0 $s0 -1
         j puzzle_loop
+		out_puzzle_loop:
+
+		j main_dispatch
 
 
-
-
-go_collect:
-## moves the bot to the center of the map
+		center_main:
+		## moves the bot to the center of the map
     
-     lw $t0 BOT_X($0)
-	 blt $t0 160 upper_start
-	 li $t1 225
-	 j start_end
-	 upper_start:
-	 li $t1 45
-	 start_end:
-	 sw $t1 ANGLE($0)
-	 li $t1 1
-	 sw $t1 ANGLE_CONTROL($0)
-     li $a0 20
-     li $a1 20
-     jal dist
-     li $t0 10
-     sw $t0 VELOCITY($0)
+	     lw $t0 BOT_X($0)
+		 blt $t0 160 upper_start
+		 li $t1 225
+		 j start_end
+		 upper_start:
+		 li $t1 45
+		 start_end:
+		 sw $t1 ANGLE($0)
+		 li $t1 1
+		 sw $t1 ANGLE_CONTROL($0)
+   	 li $a0 20
+   	 li $a1 20
+   	 jal dist
+   	 li $t0 10
+   	 sw $t0 VELOCITY($0)
      move $a0 $v0
 	 li $t8 8
 	 mul $a0 $a0 $t8
      jal stop_timer ## move to 20 18?
+	 j main_dispatch
+
+	mission_move_main:
+	lw $t8, TIMER
+	li $t9 1000000
+	add $t8 $t8 $t9
+	sw $t8, TIMER
+
 	li $v0 CTR_LEFT
 	li $v1 CTR_TOP
     get_more:
@@ -132,8 +150,8 @@ go_collect:
 	move $a0 $v1
 	move $a1 $v0
 	jal move_main
-	lw $t8 test_bool
-	bne $t8 $0 test_field
+	lw $t8 signal
+	beq $t8, 0, mission_solve6
     j get_more
 
 
@@ -211,38 +229,38 @@ move_minibot: ## move $a0 bots to $a0 different locations stored in $a1
     jr $ra
 
 
-		li $t0 1
-		sw $t0 SPAWN_MINIBOT($0)
-		sw $t0 SELECT_IDLE($0)
-		li $t0 0x00001414
-		sw $t0 SET_TARGET($0)
-		
-		li $a0 50000
-		jal stop_timer
-		li $t0 0x00001414
-		sw $t0 BUILD_SILO($0)
-		li $t1 0
-		spawn_loop:
-		beq $t1 1 spawn_loop_end
-		li $t0 1
-		sw  $t0 SPAWN_MINIBOT($0)
-		addi $t1 $t1 1
-		j spawn_loop
-		spawn_loop_end:
-		
-		
-		jal assign_minibot
-
-		li $a0 10000
-		jal stop_timer
-
-		sw $t0 SELECT_IDLE($0)
-		li $t0 0x00001414
-		sw $t0 SET_TARGET($0)
-		li $a0 10000
-		jal stop_timer
-		#j spawn_loop_end
-		j infinite
+#		li $t0 1
+#		sw $t0 SPAWN_MINIBOT($0)
+#		sw $t0 SELECT_IDLE($0)
+#		li $t0 0x00001414
+#		sw $t0 SET_TARGET($0)
+#		
+#		li $a0 50000
+#		jal stop_timer
+#		li $t0 0x00001414
+#		sw $t0 BUILD_SILO($0)
+#		li $t1 0
+#		spawn_loop:
+#		beq $t1 1 spawn_loop_end
+#		li $t0 1
+#sw  $t0 SPAWN_MINIBOT($0)
+#		addi $t1 $t1 1
+#		j spawn_loop
+#		spawn_loop_end:
+#		
+#		
+#		jal assign_minibot
+#
+#		li $a0 10000
+#		jal stop_timer
+##
+#		sw $t0 SELECT_IDLE($0)
+#		li $t0 0x00001414
+#		sw $t0 SET_TARGET($0)
+#		li $a0 10000
+#		jal stop_timer
+#		#j spawn_loop_end
+#		j infinite
 
 
 
@@ -484,6 +502,17 @@ yx_move:
 main_target:
         la $t9 location
         sw $t9 GET_KERNEL_LOCATIONS($0)
+
+		#ensure safety
+		li $t5 CTR_LEFT
+		li $t6 CTR_TOP
+		bge $v0 $t6 skipv0reset
+		li $v0 CTR_TOP
+		skipv0reset:
+		bge $v1 $t5 skipv1reset
+		li $v1 CTR_LEFT
+		skipv1reset:
+
 
         li $t6 40
         addi $t9 $t9 4
@@ -1149,6 +1178,7 @@ interrupt_handler:
         bne     $a0, 0, non_intrpt
 
 interrupt_dispatch:                     # Interrupt:
+		sw $0, VELOCITY
         mfc0    $k0, $13                # Get Cause register, again
         beq     $k0, 0, done            # handled all outstanding interrupts
 
@@ -1220,8 +1250,14 @@ request_puzzle_interrupt:
 timer_interrupt:
 		sw      $0, TIMER_ACK
 #Fill in your code here
+		
+		lw $a0, signal
+		beq $a0, 0, timer_skip
+		sw $0, signal
+		j	interrupt_dispatch
+		timer_skip:
 		li $a0 1
-		sw $a0, test_bool
+		sw $a0, signal
         j   interrupt_dispatch
 non_intrpt:                             # was some non-interrupt
         li      $v0, PRINT_STRING
