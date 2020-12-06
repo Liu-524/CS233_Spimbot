@@ -324,7 +324,7 @@ get_next_location:
 			div $t8, $t6, 36
 			div $t7, $t8, 36
 			mul $t9, $t7, 36
-			sub $t7, $t7, $t9
+			sub $t7, $t8, $t9
 		    mul $t8, $t8, 36
 			sub $t6 $t6 $t8
 
@@ -347,15 +347,25 @@ get_next_location:
 			addi $t6 1
 			j loc_outer
 			loc_outer_exit:
-		bgt $t8 3 gnls
+		blt $t8 3 gnls
 			mul $t8 $t7 256
 			or $t8 $t6 $t8
 			sw $t8 0($t4)
 				move $a0 $t7
 				li $v0 1
 				syscall
-				move $a0 $t6
+				li $v0 4
+				li $a0 0
 				syscall
+
+				move $a0 $t6
+				li $v0 1
+				syscall
+				
+				li $v0 4
+				li $a0 0
+				syscall
+
 			add $t4 4
 			add $t5 1
 		gnls:
