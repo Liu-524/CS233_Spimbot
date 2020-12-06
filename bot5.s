@@ -50,7 +50,7 @@ heap:        .half 0:2000
 location:    .byte 0:1700
 minibot:	 .word 0:30
 test_bool:   .word 0
-test_loc:    .byte 0:200
+test_loc:    .word 0:5
 
 #### Puzzle
 BNK_AGL: .word 45
@@ -140,34 +140,43 @@ go_collect:
 	test_field:
 	#your code
         la $t1, test_loc
-        li $t0, 0x12
-        sb $t0, 0($t1)
-        li $t0, 0x14
-        sb $t0, 1($t1)
-        li $t0, 0x13
-        sb $t0, 2($t1)
-        li $t0, 0x14
-        sb $t0, 3($t1)
-        li $t0, 0x14
-        sb $t0, 4($t1)
-        li $t0, 0x14
-        sb $t0, 5($t1)
+        li $t0, 0x1a20
+        sw $t0, 0($t1)
+        li $t0, 0x1a0c
+        sw $t0, 4($t1)
+        li $t0, 0x0c1a
+        sw $t0, 8($t1)
+        li $t0, 0x0c20
+        sw $t0, 12($t1)
+        li $t0, 0x220c
+        sw $t0, 16($t1)
+        
         li $t0, 1
         sw $t0, SPAWN_MINIBOT
-        li $t0, 1
         sw $t0, SPAWN_MINIBOT
-        li $t0, 1
         sw $t0, SPAWN_MINIBOT
-        li $a0, 3
-        la $a1, test_loc
-        jal move_minibot
-        li $t0, 0x00001a06
+        
+        li $t0, 0x1a06
         sw $t0, SELECT_IDLE
         sw $t0, SET_TARGET
         li $a0, 500
         jal stop_timer
-        li $t0, 0x00001a06  ## build silo at (6,26)
+        li $t0, 0x1a06  ## build silo at (6,26)
         sw $t0, BUILD_SILO
+
+		li $t0 1
+		sw $t0, SPAWN_MINIBOT
+		sw $t0, SPAWN_MINIBOT
+		sw $t0, SPAWN_MINIBOT
+		sw $t0, SPAWN_MINIBOT
+
+		move_again:
+		li $a0 1
+		la $a1 test_loc
+		jal move_minibot
+		la $a0 500
+		jal stop_timer
+		j move_again
         li $t0, 1
         sw $t0, SPAWN_MINIBOT
         jal assign_minibot
@@ -179,21 +188,20 @@ move_minibot: ## move $a0 bots to $a0 different locations stored in $a1
     la $t0, minibot
     sw $t0, GET_MINIBOT
     lw $t1, 0($t0) # number of minibots
-    bgt $a0, $t1, mv_mbot_out
+	#bgt $a0, $t1, mv_mbot_out
     addi $t2, $t0, 4 # minibots*
     li $t0, 0
     mv_mbot:
-    bge $t0, $a0, mv_mbot_out
-        li $t3, 2
+    bge $t0, $t1, mv_mbot_out
+        li $t3, 4
         mul $t3, $t3, $t0
         add $t3, $t3, $a1
-        lbu $t4, 1($t3)
-        sll $t4, $t4, 8
-        lbu $t5, 0($t3) # loc
-        add $t4, $t4, $t5
+        lw $t4, 0($t3)
+#        sll $t4, $t4, 8
+#        lbu $t5, 0($t3) # loc
         lw $t6, 0($t2) # bot id
         sw $t6, SELECT_ID
-        sw $t5, SET_TARGET
+        sw $t4, SET_TARGET
         addi $t0, $t0, 1
         addi $t2, $t2, 8
     j mv_mbot
@@ -201,13 +209,6 @@ move_minibot: ## move $a0 bots to $a0 different locations stored in $a1
     lw $ra, 0($sp)
     addi $sp, $sp, 4
     jr $ra
-
-
-
-
-
-
-
 
 
 		li $t0 1
