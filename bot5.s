@@ -151,6 +151,8 @@ go_collect:
         jal stop_timer
         li $t0, 0x00001a06  ## build silo at (6,26)
         sw $t0, BUILD_SILO
+        li $t0, 1
+        sw $t0, SPAWN_MINIBOT
         jal assign_minibot
 	j test_field	
 
