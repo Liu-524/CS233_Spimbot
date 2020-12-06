@@ -50,6 +50,7 @@ heap:        .half 0:2000
 location:    .byte 0:1700
 minibot:	 .word 0:30
 test_bool:   .word 0
+test_loc:    .byte 0:200
 
 #### Puzzle
 BNK_AGL: .word 45
@@ -138,12 +139,28 @@ go_collect:
 
 	test_field:
 	#your code
+        la $t1, test_loc
+        li $t0, 0x12
+        sb $t0, 0($t1)
+        li $t0, 0x14
+        sb $t0, 1($t1)
+        li $t0, 0x13
+        sb $t0, 2($t1)
+        li $t0, 0x14
+        sb $t0, 3($t1)
+        li $t0, 0x14
+        sb $t0, 4($t1)
+        li $t0, 0x14
+        sb $t0, 5($t1)
         li $t0, 1
         sw $t0, SPAWN_MINIBOT
         li $t0, 1
         sw $t0, SPAWN_MINIBOT
         li $t0, 1
         sw $t0, SPAWN_MINIBOT
+        li $a0, 3
+        la $a1, test_loc
+        jal move_minibot
         li $t0, 0x00001a06
         sw $t0, SELECT_IDLE
         sw $t0, SET_TARGET
@@ -156,8 +173,34 @@ go_collect:
         jal assign_minibot
 	j test_field	
 
-
-
+move_minibot: ## move $a0 bots to $a0 different locations stored in $a1
+    sub $sp, $sp, 4
+    sw $ra, 0($sp)
+    la $t0, minibot
+    sw $t0, GET_MINIBOT
+    lw $t1, 0($t0) # number of minibots
+    bgt $a0, $t1, mv_mbot_out
+    addi $t2, $t0, 4 # minibots*
+    li $t0, 0
+    mv_mbot:
+    bge $t0, $a0, mv_mbot_out
+        li $t3, 2
+        mul $t3, $t3, $t0
+        add $t3, $t3, $a1
+        lbu $t4, 1($t3)
+        sll $t4, $t4, 8
+        lbu $t5, 0($t3) # loc
+        add $t4, $t4, $t5
+        lw $t6, 0($t2) # bot id
+        sw $t6, SELECT_ID
+        sw $t5, SET_TARGET
+        addi $t0, $t0, 1
+        addi $t2, $t2, 8
+    j mv_mbot
+    mv_mbot_out:
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    jr $ra
 
 
 
