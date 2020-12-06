@@ -324,7 +324,6 @@ get_next_location:
 		la $t9 location
 		sw $t9 GET_KERNEL_LOCATIONS($0)
 		la $t4 test_loc
-
 		add $t9 4
 		li $t5 0 # find 10
 		loopp:
@@ -351,7 +350,7 @@ get_next_location:
 			addi $t6 1
 			j loc_outer
 			loc_outer_exit:
-		bgt $t8 3 gnls:
+		bgt $t8 3 gnls
 			mul $t8 $t7 256
 			or $t8 $t6 $t8
 			sw $t8 0($t4)
@@ -366,39 +365,6 @@ get_next_location:
 		j loopp
 		loop_over:
 		jr $ra
-
-get_next_location:
-		la $t9 location
-		sw $t9 GET_KERNEL_LOCATIONS($0)
-		
-		li $a1 40	# bound
-		li $v0 42
-		syscall
-		move $t6 $a0
-		addi $t9 $t9 4
-		li $v0 0
-		loc_outer:
-		bge $v1 40 loc_outer_exit
-			loc_inner:
-			bge $v1 40 loc_inner_exit
-				mul $t8 $t6 $v0
-				add $t8 $t8 $v1
-				add $t8 $t8 $t9
-				lb $t8 0($t8)
-				blt $t8 4 next_loc
-				jr $ra
-				next_loc:
-			addi $v1 $v1 1
-			j loc_inner
-			loc_inner_exit:
-
-			li $v1 0
-		addi $v0 $v0 1
-		j loc_outer
-		loc_outer_exit:
-		li $v0 0
-		jr $ra
-
 
 move_main:
 addi $sp $sp -12
