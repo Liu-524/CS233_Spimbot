@@ -158,6 +158,10 @@ main:
 
 
 	test_field:
+	lw $t8, TIMER
+	li $t9 10000
+	add $t8 $t8 $t9
+	sw $t8, TIMER
 	#your code
         
         
