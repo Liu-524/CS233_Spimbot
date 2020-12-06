@@ -205,6 +205,7 @@ main:
 
 move_minibot: ## move $a0 bots to $a0 different locations stored in $a1
     sub $sp, $sp, 4
+	la $a1 test_loc
     sw $ra, 0($sp)
     la $t0, minibot
     sw $t0, GET_MINIBOT
@@ -297,28 +298,6 @@ assign_minibot:
 
 
 
-encode_five_locations:
-	addi $sp $sp -16
-	sw $ra 0($sp)
-	sw $s0 4($sp)
-	sw $s1 8($sp)
-	sw $s2 12($sp)
-	la $t9 location
-	sw $t9, GET_KERNEL_LOCATIONS
-	li $s0 5
-	encode_loop:
-	beq $s0 $0 encode_loc_out
-		#use same logic as get_next_location to get x y
-		
-		#use similar logic as move main to encode path
-	addi $s0 $s0 -1
-	j encode_loop
-	encode_loc_out:
-
-
-
-
-
 
 
 
@@ -331,16 +310,17 @@ get_next_location:
 		loopp:
 		bge $t5 10 loop_over
 			
-			lw $t6, TIMER
-			div $t8, $t6, 36
-			div $t7, $t8, 36
-			mul $t9, $t7, 36
-			sub $t7, $t8, $t9
-		    mul $t8, $t8, 36
-			sub $t6 $t6 $t8
+#			lw $t6, TIMER
+#			div $t8, $t6, 36
+#			div $t7, $t8, 36
+#			mul $t9, $t7, 36
+#			sub $t7, $t8, $t9
+#		    mul $t8, $t8, 36
+#			sub $t6 $t6 $t8
 
 			li $a1 40
-
+li $t6 0
+li $t7 0
 			la $t9 location
 			addi $t9 $t9 4
 			loc_outer:
@@ -351,7 +331,7 @@ get_next_location:
 					add $t8 $t8 $t7
 					add $t8 $t8 $t9
 					lb $t8 0($t8)
-					bgt $t8 3 loc_outer_exit
+					bgt $t8 8 loc_outer_exit
 				addi $t7 1
 				j loc_inner
 				loc_inner_exit:
@@ -359,13 +339,11 @@ get_next_location:
 			addi $t6 1
 			j loc_outer
 			loc_outer_exit:
-			li $v0 1
-			move $a0 $t8
-			syscall
+			
 
-		blt $t8 3 gnls
-			sll $t8 $t7 8
-			or $t8 $t6 $t8
+		ble $t8 8 gnls
+			sll $t8 $t6 8
+			or $t8 $t7 $t8 ###reversed
 			sw $t8 0($t4)
 				li $v0 1
 				move $a0 $t7
@@ -1280,7 +1258,7 @@ timer_interrupt:
 		
 		lw $a0, signal
 		addi $a0 $a0 1
-		beq $a0, 3, timer_skip
+		bge $a0, 3, timer_skip
 		sw $a0, signal
 		j	interrupt_dispatch
 		timer_skip:
