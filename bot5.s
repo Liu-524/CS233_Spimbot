@@ -35,6 +35,7 @@ SET_TARGET				= 0xffff00e8
 GET_KERNEL_LOCATIONS    = 0xffff200c
 SELECT_ID 				= 0xffff2004
 GET_MINIBOT				= 0xffff2014
+GET_MAP                 = 0xffff00f0
 # Add any MMIO that you need here (see the Spimbot Documentation)
 
 
@@ -50,7 +51,7 @@ puzzle:      .half 0:2000
 heap:        .half 0:2000
 location:    .byte 0:1700
 minibot:	 .word 0:30
-test_bool:   .word 0
+atk_flag:    .word 0
 test_loc:    .word 0:5
 
 #### Puzzle
@@ -229,38 +230,35 @@ move_minibot: ## move $a0 bots to $a0 different locations stored in $a1
     jr $ra
 
 
-#		li $t0 1
-#		sw $t0 SPAWN_MINIBOT($0)
-#		sw $t0 SELECT_IDLE($0)
-#		li $t0 0x00001414
-#		sw $t0 SET_TARGET($0)
-#		
-#		li $a0 50000
-#		jal stop_timer
-#		li $t0 0x00001414
-#		sw $t0 BUILD_SILO($0)
-#		li $t1 0
-#		spawn_loop:
-#		beq $t1 1 spawn_loop_end
-#		li $t0 1
-#sw  $t0 SPAWN_MINIBOT($0)
-#		addi $t1 $t1 1
-#		j spawn_loop
-#		spawn_loop_end:
-#		
-#		
-#		jal assign_minibot
-#
-#		li $a0 10000
-#		jal stop_timer
-##
-#		sw $t0 SELECT_IDLE($0)
-#		li $t0 0x00001414
-#		sw $t0 SET_TARGET($0)
-#		li $a0 10000
-#		jal stop_timer
-#		#j spawn_loop_end
-#		j infinite
+get_oppo_silo:
+	la $t0 location
+	sw $t0, GET_MAP
+	
+	li $t1 0
+	li $t4 3
+	oppo_oloop:
+	bge $t1, 1600, oppo_ooout
+		addi $t3 $t0 $t1	
+		lbu $t3 0($t1)
+		beq $t3 $t4 storeturn
+		
+	addi $t1 $t1 1
+	j oppo_oloop
+	oppo_oout:	
+	li $t4 0
+	sw $t4, atk_flag
+	jr $ra
+	storeturn:
+	li $t4 1
+	sw $t4, atk_flag
+	li $t4 40
+	div $t5 $t1 $t4 #y
+   	mul $t4 $t4 $t5 
+	sub $t4 $t1 $t4 #x
+	li $t6 8
+	sll $t4 $t4 $t6
+	or $t4 $t4 $t5
+	sw $t4, test_loc
 
 
 
@@ -313,12 +311,6 @@ encode_five_locations:
 	addi $s0 $s0 -1
 	j encode_loop
 	encode_loc_out:
-
-
-
-
-
-
 
 
 
