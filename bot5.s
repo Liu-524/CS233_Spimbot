@@ -51,13 +51,9 @@ puzzle:      .half 0:2000
 heap:        .half 0:2000
 location:    .byte 0:1700
 minibot:	 .word 0:30
-<<<<<<< HEAD
 atk_flag:    .word 0
-test_loc:    .word 0:5
-=======
-test_bool:   .word 0
 test_loc:    .word 0:10
->>>>>>> c4cb5fcc1615c1e3e401a68606b1d09e19c63b20
+
 
 #### Puzzle
 BNK_AGL: .word 45
@@ -86,14 +82,14 @@ main:
 		lw $t0, signal
 		beq $t0, 0 mission_solve6
 		beq $t0, 1 mission_move_main
-		
+		beq $t0, 2 test_field
 		mission_solve6:
 		lw $t0, TIMER
 		addi $t0 $t0 20000
 		sw $t0, TIMER
 		addi $sp $sp -4
 		sw $s0 0($sp)
-        li $s0 6
+        li $s0 10
         puzzle_loop:
             beq $s0 $0 out_puzzle_loop ## when solved 4 puzzles go collect
             la $t1 has_puzzle
@@ -157,23 +153,13 @@ main:
 	move $a1 $v0
 	jal move_main
 	lw $t8 signal
-	beq $t8, 0, mission_solve6
-    j get_more
+	bne $t8, 1, main_dispatch
+	j get_more
 
 
 	test_field:
 	#your code
-        la $t1, test_loc
-        li $t0, 0x1a20
-        sw $t0, 0($t1)
-        li $t0, 0x1a0c
-        sw $t0, 4($t1)
-        li $t0, 0x0c1a
-        sw $t0, 8($t1)
-        li $t0, 0x0c20
-        sw $t0, 12($t1)
-        li $t0, 0x220c
-        sw $t0, 16($t1)
+        jal get_next_location
         
         li $t0, 1
         sw $t0, SPAWN_MINIBOT
@@ -243,7 +229,7 @@ get_oppo_silo:
 	li $t4 3
 	oppo_oloop:
 	bge $t1, 1600, oppo_ooout
-		addi $t3 $t0 $t1	
+		add $t3 $t0 $t1	
 		lbu $t3 0($t1)
 		beq $t3 $t4 storeturn
 		
@@ -268,6 +254,7 @@ get_oppo_silo:
 
 
 assign_minibot:
+		jal get_next_location
 		addi $sp $sp -4
 		sw $ra 0($sp)
 		la $t0 minibot
@@ -332,12 +319,18 @@ get_next_location:
 		li $t5 0 # find 10
 		loopp:
 		bge $t5 10 loop_over
+			
+			lw $t6, TIMER
+			div $t8, $t6, 36
+			div $t7, $t8, 36
+			mul $t9, $t7, 36
+			sub $t7, $t7, $t9
+		    mul $t8, $t8, 36
+			sub $t6 $t6 $t8
+
 			li $a1 40
-			li $v0 42
-			syscall
-			move $t6 $a0
-			syscall
-			move $t7 $a0
+
+			la $t9 location
 			loc_outer:
 			bge $t6 40 loc_outer_exit
 				loc_inner:
@@ -350,7 +343,7 @@ get_next_location:
 				addi $t7 1
 				j loc_inner
 				loc_inner_exit:
-				li $v1 0
+				li $t7 0
 			addi $t6 1
 			j loc_outer
 			loc_outer_exit:
@@ -1268,11 +1261,12 @@ timer_interrupt:
 #Fill in your code here
 		
 		lw $a0, signal
-		beq $a0, 0, timer_skip
-		sw $0, signal
+		addi $a0 $a0 1
+		beq $a0, 3, timer_skip
+		sw $a0, signal
 		j	interrupt_dispatch
 		timer_skip:
-		li $a0 1
+		li $a0 0
 		sw $a0, signal
         j   interrupt_dispatch
 non_intrpt:                             # was some non-interrupt
