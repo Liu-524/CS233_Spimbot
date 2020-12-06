@@ -159,7 +159,7 @@ main:
 
 	test_field:
 	#your code
-        jal get_next_location
+        
         
         li $t0, 1
         sw $t0, SPAWN_MINIBOT
@@ -169,7 +169,7 @@ main:
         li $t0, 0x1a06
         sw $t0, SELECT_IDLE
         sw $t0, SET_TARGET
-        li $a0, 500
+        li $a0, 300
         jal stop_timer
         li $t0, 0x1a06  ## build silo at (6,26)
         sw $t0, BUILD_SILO
@@ -181,15 +181,22 @@ main:
 		sw $t0, SPAWN_MINIBOT
 
 		move_again:
-		li $a0 1
+		jal get_next_location
 		la $a1 test_loc
 		jal move_minibot
-		la $a0 500
+		la $a0 300
 		jal stop_timer
+		sw $t0, SELECT_IDLE
+		li $t0, 0x1a06
+		sw $t0, SET_TARGET
+		la $a0 300
+		jal stop_timer
+
 		j move_again
         li $t0, 1
         sw $t0, SPAWN_MINIBOT
-        jal assign_minibot
+
+
 	j test_field	
 
 move_minibot: ## move $a0 bots to $a0 different locations stored in $a1
@@ -331,10 +338,11 @@ get_next_location:
 			li $a1 40
 
 			la $t9 location
+			addi $t9 $t9 4
 			loc_outer:
-			bge $t6 40 loc_outer_exit
+			bge $t6 36 loc_outer_exit
 				loc_inner:
-				bge $t7 40 loc_inner_exit
+				bge $t7 36 loc_inner_exit
 					mul $t8 $a1 $t6
 					add $t8 $t8 $t7
 					add $t8 $t8 $t9
@@ -347,23 +355,19 @@ get_next_location:
 			addi $t6 1
 			j loc_outer
 			loc_outer_exit:
+			li $v0 1
+			move $a0 $t8
+			syscall
+
 		blt $t8 3 gnls
-			mul $t8 $t7 256
+			sll $t8 $t7 8
 			or $t8 $t6 $t8
 			sw $t8 0($t4)
-				move $a0 $t7
 				li $v0 1
+				move $a0 $t7
 				syscall
-				li $v0 4
-				li $a0 0
-				syscall
-
 				move $a0 $t6
 				li $v0 1
-				syscall
-				
-				li $v0 4
-				li $a0 0
 				syscall
 
 			add $t4 4
