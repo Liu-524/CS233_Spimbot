@@ -183,7 +183,7 @@ middle_get:
 	middle_get_loop:
 		li $s8 CTR_LEFT
 		li $s7 CTR_TOP
-		beq $s6, 15, middle_out
+		beq $s6, 10, middle_out
 		jal main_target
 		move $a0 $s8
 		move $a1 $s7
@@ -202,7 +202,7 @@ middle_get1:
     middle_get_loop1:
         li $s8 CTR_LEFT
         li $s7 CTR_TOP
-        beq $s6, 15, middle_out1
+        beq $s6, 10, middle_out1
         jal main_target
         move $a0 $s8
         move $a1 $s7
@@ -279,7 +279,7 @@ get_out:
         li $t0, 0x1a06
         sw $t0, SELECT_IDLE
         sw $t0, SET_TARGET
-        li $a0, 160
+        li $a0, 56
         jal stop_timer
         li $t0, 0x1a06  ## build silo at (6,26)
         sw $t0, BUILD_SILO
