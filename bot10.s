@@ -119,21 +119,21 @@ main:
             li $a1, 14
             jal move_main
             li $a0, 12
-            li $a1, 11
+            li $a1, 13
             jal move_main
-            li $a0, 10
-            li $a1, 11
-            jal move_main
-            li $a0, 5
-            li $a1, 5
-            jal move_main
-            li $a0, 7
+            li $a0, 11
             li $a1, 10
             jal move_main
             li $a0, 5
-            li $a1, 15
+            li $a1, 9
+            jal move_main
+            li $a0, 8
+            li $a1, 7
             jal move_main
             li $a0, 5
+            li $a1, 11
+            jal move_main
+            li $a0, 7
             li $a1, 15
             jal move_main
 
@@ -526,13 +526,13 @@ get_oppo_silo:
 	beq $t1, 1600, oppo_oout
 		add $t3 $t0 $t1	
 		lbu $t3 0($t3)
-#		bne $t1, 1046, test_bk
-#			li $v0 1
-#			move $a0 $t3
-#			syscaLL
+		bne $t1, 1128, test_bk
+			li $v0 1
+			move $a0 $t3
+			syscall
 		test_bk:
 		beq $t3 $t4 storeturn
-		beq $t3 $t5 storeturn
+#beq $t3 $t5 storeturn
 	addi $t1 $t1 1
 	j oppo_oloop
 
