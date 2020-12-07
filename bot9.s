@@ -1,3 +1,4 @@
+B
 .data
 # syscall constants
 PRINT_STRING            = 4
@@ -36,6 +37,7 @@ GET_KERNEL_LOCATIONS    = 0xffff200c
 SELECT_ID 				= 0xffff2004
 GET_MINIBOT				= 0xffff2014
 GET_MAP                 = 0xffff00f0
+PUZZLE_CNT              = 0xffff2008
 # Add any MMIO that you need here (see the Spimbot Documentation)
 
 TSHLD = 5
@@ -54,6 +56,7 @@ GRIDSIZE = 16
 signal:      	   .word 0
 has_puzzle:        .word 0                         
 anchor: 		   .word -1
+oppo_puzzle:       .word 0:2
 puzzle:      .half 0:2000             
 heap:        .half 0:2000
 location:    .byte 0:1700
@@ -94,15 +97,20 @@ main:
 		beq $t0, 1 mission_solve6
 		beq $t0, 0 mission_move_main
 		
-
-
 	mission_solve6:
 		lw $t0, TIMER
-		addi $t0 $t0 200
+		addi $t0 $t0 15
 		sw $t0, TIMER
 
-        lw $s0, puzzle_cnt
+		la $t0, oppo_puzzle
+		sw $t0, PUZZLE_CNT
+		lw $t0 4($t0)    ##oppo_puzzle
+		bgt $t0, 3, need_solve
+		
 
+	    j main_dispatch	
+		need_solve:
+        lw $s0, puzzle_cnt
         puzzle_loop:
             beq $s0 $0 out_puzzle_loop ## when solved 4 puzzles go collect
             la $t1 has_puzzle
@@ -114,33 +122,32 @@ main:
                 lw $t2 0($t1)
                 bne $0 $t2 start_solving
             j while
-
-
             start_solving:
             jal slow_solve_dominosa
 			la $a0 puzzle
 			sw $a0 REQUEST_PUZZLE
-
             la $a1 heap
             sw $a1 SUBMIT_SOLUTION
 			sw $0  has_puzzle
-
 	    addi $s0 $s0 -1
-
         j puzzle_loop
 		out_puzzle_loop:
 		li $t0 1
 		sw $t0, SPAWN_MINIBOT
 		
+		jal get_oppo_silo
+		lw $t0, atk_flag
+		beq $t0, 0, non_atk
+			sw $t0, SELECT_IDLE
+			lw $t0, test_loc
+			sw $t0, SET_TARGET
 
-		lw $t0, silo_built
-		bne $t0, $zero, builtt
-		jal test_field
+		non_atk:
+
         # j test_field
-		builtt:
 		j main_dispatch
 
-
+		
 		center_main:
 		## moves the bot to the center of the map
     
@@ -261,7 +268,7 @@ get_out:
 	
 
 
-	test_field:
+#test_field:
 	# lw $t8, TIMER
 	# li $t9 10000
 	# add $t8 $t8 $t9
@@ -269,36 +276,36 @@ get_out:
 	#your code
         # lw $t0, puzzle_cnt
         # beq $t0, 4, enter_move_again
-        sub $sp, $sp, 4
-        sw $ra, 0($sp)
-        li $t0, 1
-        sw $t0, SPAWN_MINIBOT
-        sw $t0, SPAWN_MINIBOT
-        sw $t0, SPAWN_MINIBOT
-        
-        li $t0, 0x1a06
-        sw $t0, SELECT_IDLE
-        sw $t0, SET_TARGET
-        li $a0, 56
-        jal stop_timer
-        li $t0, 0x1a06  ## build silo at (6,26)
-        sw $t0, BUILD_SILO
-        li $t8, 1
-        sw $t8, silo_built
-        lw $ra, 0($sp)
-        addi $sp, $sp, 4
-        jr $ra
-
-    main_mbot: ## spawn 2 bots and move to silo
-		li $t0 1
-		sw $t0, SPAWN_MINIBOT
-		sw $t0, SPAWN_MINIBOT
+#        sub $sp, $sp, 4
+#       sw $ra, 0($sp)
+#       li $t0, 1
+#       sw $t0, SPAWN_MINIBOT
+#       sw $t0, SPAWN_MINIBOT
+#       sw $t0, SPAWN_MINIBOT
+#       
+#       li $t0, 0x1a06
+#       sw $t0, SELECT_IDLE
+#       sw $t0, SET_TARGET
+#       li $a0, 56
+#        jal stop_timer
+#       li $t0, 0x1a06  ## build silo at (6,26)
+#        sw $t0, BUILD_SILO
+#       li $t8, 1
+#       sw $t8, silo_built
+#       lw $ra, 0($sp)
+#       addi $sp, $sp, 4
+#       jr $ra
+#
+#   main_mbot: ## spawn 2 bots and move to silo
+#		li $t0 1
+#		sw $t0, SPAWN_MINIBOT
+#		sw $t0, SPAWN_MINIBOT
 		# sw $t0, SPAWN_MINIBOT
 		# sw $t0, SPAWN_MINIBOT
-        li $t0, 0x00001a06
-        sw $t0, SELECT_IDLE
-        sw $t0, SET_TARGET
-        jr $ra
+#       li $t0, 0x00001a06
+#       sw $t0, SELECT_IDLE
+#       sw $t0, SET_TARGET
+#       jr $ra
 
 	# 	enter_move_again:
     #     jal get_next_location
@@ -366,10 +373,13 @@ get_oppo_silo:
 		
 	addi $t1 $t1 1
 	j oppo_oloop
+
 	oppo_oout:	
 	li $t4 0
 	sw $t4, atk_flag
 	jr $ra
+
+
 	storeturn:
 	li $t4 1
 	sw $t4, atk_flag
@@ -488,18 +498,15 @@ move_main:
     sw $s1 8($sp)
 	sw $a0 12($sp)
 	sw $a1 16($sp)
-    lw $t0, silo_built
 
 
-    beq $t0, $zero, label2
     la $t0, minibot
     sw $t0, GET_MINIBOT
     lw $t1, minibot
     bne $t1, $zero, label
-    jal main_mbot
+
     label:
     jal move_minibot
-    label2:
 
 	lw $a0 12($sp)
 	lw $a1 16($sp)
