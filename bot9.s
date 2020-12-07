@@ -209,6 +209,23 @@ main:
     sw $t0, anchor
     j get_out
 
+        left_get:
+	li $s8 L_LEFT
+	li $s7 L_TOP
+	li $s6 0
+	left_get_loop:
+		beq $s6, 10, left_out
+		jal left_target
+		move $a0 $s8
+		move $a1 $s7
+		jal move_main
+		addi $s6 $s6 1
+        j left_get_loop
+        left_out:
+        jal transfer_l2m
+        li $t0, 0
+        sw $t0, anchor
+        j get_out
 
 	get_out:
 	lw $t8 signal
@@ -674,6 +691,41 @@ left_target:
         li $s7 L_TOP
         jr $ra
 
+left_target:
+        la $t9 location
+        sw $t9 GET_KERNEL_LOCATIONS($0)
+        #ensure safety
+        li $t5 37 #right bound
+        li $t6 17
+        bge $s7 $t6 skipv0reset
+        li $s7 R_TOP
+        skipv0reset2:
+        bge $s8 $t5 skipv1reset
+        li $s8 R_LEFT
+        skipv1reset2:
+        li $t6 40
+        addi $t9 $t9 4
+        mt_outer2:
+        bge $s7 17 mt_outer_exit2
+            mt_inner2:
+            bge $s8 37 mt_inner_exit2
+                mul $t8 $t6 $s7
+                add $t8 $t8 $s8
+                add $t8 $t8 $t9
+                lb $t8 0($t8)
+                blt $t8, TSHLD mt_next_loc2
+                jr $ra
+                mt_next_loc2:
+            addi $s8 $s8 1
+            j mt_inner2
+            mt_inner_exit2:
+
+            li $s8 R_LEFT
+        addi $s7 $s7 1
+        j mt_outer2
+        mt_outer_exit2:
+        li $s7 R_TOP
+        jr $ra
 
 transfer_m2l:
     addi $sp $sp -4
@@ -711,7 +763,41 @@ transfer_l2m:
     addi $sp $sp 4
     jr $ra
 
+transfer_m2r:
+    addi $sp $sp -4
+    sw $ra 0($sp)
+    li $a0 25
+    li $a1 12
+    jal move_main
+    li $t0 0
+    sw $t0, ANGLE
+    li $t0 1
+    sw $t0, ANGLE_CONTROL
+    li $t0 10
+    sw $t0, VELOCITY
+    li $a0 56
+    jal stop_timer
+    lw $ra 0($sp)
+    addi $sp $sp 4
+    jr $ra
 
+transfer_r2m:
+    addi $sp $sp -4
+    sw $ra 0($sp)
+    li $a0 33
+    li $a1 12
+    jal move_main
+    li $t0 180
+    sw $t0, ANGLE
+    li $t0 1
+    sw $t0, ANGLE_CONTROL
+    li $t0 10
+    sw $t0, VELOCITY
+    li $a0 56
+    jal stop_timer
+    lw $ra 0($sp)
+    addi $sp $sp 4
+    jr $ra
 
 
 dist:
