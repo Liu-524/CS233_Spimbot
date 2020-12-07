@@ -53,7 +53,8 @@ location:    .byte 0:1700
 minibot:	 .word 0:30
 atk_flag:    .word 0
 test_loc:    .word 0:10
-
+puzzle_cnt:  .word 10
+silo_built:  .word 0
 
 #### Puzzle
 BNK_AGL: .word 45
@@ -82,14 +83,19 @@ main:
 		lw $t0, signal
 		beq $t0, 0 mission_solve6
 		beq $t0, 1 mission_move_main
-		beq $t0, 2 test_field
+		# beq $t0, 2 test_field
 		mission_solve6:
 		lw $t0, TIMER
 		addi $t0 $t0 20000
 		sw $t0, TIMER
 		addi $sp $sp -4
 		sw $s0 0($sp)
-        li $s0 10
+        lw $s0 puzzle_cnt
+        li $t0, 10
+        beq $s0, $t0, puzzle_loop
+        lw $t0, silo_built
+        bne $t0, $zero, puzzle_loop
+        jal test_field
         puzzle_loop:
             beq $s0 $0 out_puzzle_loop ## when solved 4 puzzles go collect
             la $t1 has_puzzle
@@ -111,7 +117,7 @@ main:
 	    addi $s0 $s0 -1
         j puzzle_loop
 		out_puzzle_loop:
-
+        # j test_field
 		j main_dispatch
 
 
@@ -158,13 +164,15 @@ main:
 
 
 	test_field:
-	lw $t8, TIMER
-	li $t9 10000
-	add $t8 $t8 $t9
-	sw $t8, TIMER
+	# lw $t8, TIMER
+	# li $t9 10000
+	# add $t8 $t8 $t9
+	# sw $t8, TIMER
 	#your code
-        
-        
+        # lw $t0, puzzle_cnt
+        # beq $t0, 4, enter_move_again
+        sub $sp, $sp, 4
+        sw $ra, 0($sp)
         li $t0, 1
         sw $t0, SPAWN_MINIBOT
         sw $t0, SPAWN_MINIBOT
@@ -173,35 +181,49 @@ main:
         li $t0, 0x1a06
         sw $t0, SELECT_IDLE
         sw $t0, SET_TARGET
-        li $a0, 300
+        li $a0, 500
         jal stop_timer
         li $t0, 0x1a06  ## build silo at (6,26)
         sw $t0, BUILD_SILO
+        li $t8, 1
+        sw $t8, silo_built
+        lw $ra, 0($sp)
+        addi $sp, $sp, 4
+        jr $ra
+    j main_dispatch
 
+    main_mbot: ## spawn 2 bots and move to silo
 		li $t0 1
 		sw $t0, SPAWN_MINIBOT
 		sw $t0, SPAWN_MINIBOT
-		sw $t0, SPAWN_MINIBOT
-		sw $t0, SPAWN_MINIBOT
+		# sw $t0, SPAWN_MINIBOT
+		# sw $t0, SPAWN_MINIBOT
+        li $t0, 0x00001a06
+        sw $t0, SELECT_IDLE
+        sw $t0, SET_TARGET
+        jr $ra
 
-		move_again:
-		jal get_next_location
-		la $a1 test_loc
-		jal move_minibot
-		la $a0 300
-		jal stop_timer
-		sw $t0, SELECT_IDLE
-		li $t0, 0x1a06
-		sw $t0, SET_TARGET
-		la $a0 300
-		jal stop_timer
+	# 	enter_move_again:
+    #     jal get_next_location
 
-		j move_again
-        li $t0, 1
-        sw $t0, SPAWN_MINIBOT
+    #     move_again:
+	# 	la $a1 test_loc
+	# 	jal move_minibot
+	# 	la $a0 400
+	# 	jal stop_timer
+		
+    #     sw $t0, SELECT_IDLE
+	# 	li $t0, 0x1a06
+	# 	sw $t0, SET_TARGET
+
+	# 	la $a0 500
+	# 	jal stop_timer
+    #     lw $t5, signal
+    #     bne $t5, 2, main_dispatch
+	# 	j move_again
 
 
-	j test_field	
+	# j test_field	
 
 move_minibot: ## move $a0 bots to $a0 different locations stored in $a1
     sub $sp, $sp, 4
@@ -310,23 +332,23 @@ get_next_location:
 		loopp:
 		bge $t5 10 loop_over
 			
-#			lw $t6, TIMER
-#			div $t8, $t6, 36
-#			div $t7, $t8, 36
-#			mul $t9, $t7, 36
-#			sub $t7, $t8, $t9
-#		    mul $t8, $t8, 36
-#			sub $t6 $t6 $t8
-
+			# lw $t6, TIMER
+			# div $t8, $t6, 36
+			# div $t7, $t8, 36
+			# mul $t9, $t7, 36
+			# sub $t7, $t8, $t9
+		    # mul $t8, $t8, 36
+			# sub $t6 $t6 $t8
+			
 			li $a1 40
-li $t6 0
-li $t7 0
+			li $t6 20
+			li $t7 2
 			la $t9 location
 			addi $t9 $t9 4
 			loc_outer:
-			bge $t6 36 loc_outer_exit
+			bge $t6 34 loc_outer_exit
 				loc_inner:
-				bge $t7 36 loc_inner_exit
+				bge $t7 17 loc_inner_exit
 					mul $t8 $a1 $t6
 					add $t8 $t8 $t7
 					add $t8 $t8 $t9
@@ -335,13 +357,13 @@ li $t7 0
 				addi $t7 1
 				j loc_inner
 				loc_inner_exit:
-				li $t7 0
+				li $t7 2
 			addi $t6 1
 			j loc_outer
 			loc_outer_exit:
 			
 
-		ble $t8 8 gnls
+		ble $t8 3 gnls
 			sll $t8 $t6 8
 			or $t8 $t7 $t8 ###reversed
 			sw $t8 0($t4)
@@ -359,13 +381,27 @@ li $t7 0
 		loop_over:
 		jr $ra
 
-
+return_minibot: ## move all idle minibots back to silo
+    li $t0, 0x00001a06
+    sw $t0, SELECT_IDLE
+    sw $t0, SET_TARGET
+    jr $ra
 
 move_main:
-addi $sp $sp -12
+    addi $sp $sp -12
 	sw $ra 0($sp)
-        sw $s0 4($sp)
-        sw $s1 8($sp)
+    sw $s0 4($sp)
+    sw $s1 8($sp)
+    lw $t0, silo_built
+    beq $t0, $zero, label2
+    la $t0, minibot
+    sw $t0, GET_MINIBOT
+    lw $t1, minibot
+    bne $t1, $zero, label
+    jal main_mbot
+    label:
+    jal assign_minibot
+    label2:
 	lw $t0 BOT_X #x
 	lw $t1 BOT_Y #y
 	li $t8 8
@@ -498,6 +534,7 @@ yx_move:
 			jal stop_timer
 			j move_end
 	move_end:
+        jal return_minibot
 		lw $ra 0($sp)
 		lw $s0 4($sp)
 		lw $s1 8($sp)
@@ -1258,10 +1295,12 @@ timer_interrupt:
 		
 		lw $a0, signal
 		addi $a0 $a0 1
-		bge $a0, 3, timer_skip
+		bge $a0, 2, timer_skip
 		sw $a0, signal
 		j	interrupt_dispatch
 		timer_skip:
+        li $a0 4
+		sw $a0, puzzle_cnt
 		li $a0 0
 		sw $a0, signal
         j   interrupt_dispatch
