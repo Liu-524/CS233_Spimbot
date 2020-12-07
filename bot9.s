@@ -53,7 +53,8 @@ R_TOP = 5
 ### Puzzle
 GRIDSIZE = 16
 signal:      	   .word 0
-has_puzzle:        .word 0                         
+has_puzzle:        .word 0
+puzzle_cnt:  .word 1
 anchor: 		   .word -1
 oppo_puzzle:       .word 0:2
 puzzle:      .half 0:2000             
@@ -62,7 +63,7 @@ location:    .byte 0:1700
 minibot:	 .word 0:30
 atk_flag:    .word 0
 test_loc:    .word 0:10
-puzzle_cnt:  .word 1
+
 silo_built:  .word 0
 
 #### Puzzle
@@ -98,16 +99,27 @@ main:
 		
 	mission_solve6:
 		lw $t0, TIMER
-		addi $t0 $t0 15
+		addi $t0 $t0 10
 		sw $t0, TIMER
 
+
+		la, $t0, minibot
+		sw $t0, GET_MINIBOT
+		lw $t0, minibot
+		bne $t0, $0, main_dispatch
+
+		
 		la $t0, oppo_puzzle
 		sw $t0, PUZZLE_CNT
 		lw $t0 4($t0)    ##oppo_puzzle
 		bgt $t0, 3, need_solve
 		
-
+		jal get_oppo_silo
+		lw $t0, atk_flag
+		beq $t0, 1, need_solve	
 	    j main_dispatch	
+
+
 		need_solve:
         lw $s0, puzzle_cnt
         puzzle_loop:
@@ -136,14 +148,15 @@ main:
 		
 		jal get_oppo_silo
 		lw $t0, atk_flag
+		
+		beq $t0, 0, non_atk
+		lw $t0, minibot
 		beq $t0, 0, non_atk
 			sw $t0, SELECT_IDLE
 			lw $t0, test_loc
 			sw $t0, SET_TARGET
 
 		non_atk:
-
-        # j test_field
 		j main_dispatch
 
 		
@@ -173,7 +186,7 @@ main:
 
 	mission_move_main:
 	lw $t8, TIMER
-	li $t9 1000000
+	li $t9 100
 	add $t8 $t8 $t9
 	sw $t8, TIMER
 
@@ -186,18 +199,21 @@ main:
 	beq $t0, 3, right_get
 middle_get:
 	li $s6 0
+	li $s8 CTR_LEFT
+    li $s7 CTR_TOP
 	middle_get_loop:
-		li $s8 CTR_LEFT
-		li $s7 CTR_TOP
 		beq $s6, 10, middle_out
 		jal main_target
+		bne $s8, CTR_LEFT, valid_t
+        bne $s7, CTR_TOP, valid_t
+		j middle_out
+		valid_t:
 		move $a0 $s8
-		move $a1 $s7
+        move $a1 $s7
 		jal move_main
 		addi $s6 $s6 1
 	j middle_get_loop
 	middle_out:
-
 	jal transfer_m2l
 	li $t0, 2
 	sw $t0, anchor
@@ -205,11 +221,16 @@ middle_get:
 
 middle_get1:
     li $s6 0
+	li $s8 CTR_LEFT
+    li $s7 CTR_TOP
     middle_get_loop1:
-        li $s8 CTR_LEFT
-        li $s7 CTR_TOP
         beq $s6, 10, middle_out1
         jal main_target
+
+		bne $s8, CTR_LEFT, valid_t1
+        bne $s7, CTR_TOP, valid_t1
+		j middle_out1
+		valid_t1:
         move $a0 $s8
         move $a1 $s7
         jal move_main
@@ -229,6 +250,10 @@ left_get:
 	left_get_loop:
 		beq $s6, 10, left_out
 		jal left_target
+		bne $s8, L_LEFT, valid_t2
+        bne $s7, L_TOP, valid_t2
+		j left_out
+		valid_t2:
 		move $a0 $s8
 		move $a1 $s7
 		jal move_main
@@ -247,6 +272,10 @@ right_get:
     right_get_loop:
         beq $s6, 10, right_out
         jal right_target
+		bne $s8, R_LEFT, valid_t3
+        bne $s7, R_TOP, valid_t3
+		j right_out
+		valid_t3:
         move $a0 $s8
         move $a1 $s7
         jal move_main
@@ -499,16 +528,16 @@ move_main:
 	sw $a1 16($sp)
 
 
-    la $t0, minibot
-    sw $t0, GET_MINIBOT
-    lw $t1, minibot
-    bne $t1, $zero, label
-
-    label:
-    jal move_minibot
-
-	lw $a0 12($sp)
-	lw $a1 16($sp)
+#    la $t0, minibot
+#    sw $t0, GET_MINIBOT
+#    lw $t1, minibot
+#    bne $t1, $zero, label
+#
+#    label:
+#    jal move_minibot
+#
+#	lw $a0 12($sp)
+#	lw $a1 16($sp)
 
 	lw $t0 BOT_X #x
 	lw $t1 BOT_Y #y
@@ -1553,8 +1582,6 @@ timer_interrupt:
 		sw $a0, signal
 		j	interrupt_dispatch
 		timer_skip:
-        li $a0 1
-		sw $a0, puzzle_cnt
 		li $a0 0
 		sw $a0, signal
         j   interrupt_dispatch
