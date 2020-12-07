@@ -55,8 +55,9 @@ GRIDSIZE = 16
 signal:      	   .word 0
 has_puzzle:        .word 0
 puzzle_cnt:  .word 1
+
 anchor: 		   .word -1
-oppo_puzzle:       .word 0:2
+oppo_puzzle:       .word 0:3
 puzzle:      .half 0:2000             
 heap:        .half 0:2000
 location:    .byte 0:1700
@@ -96,14 +97,15 @@ main:
 		lw $t0, signal
 		beq $t0, 1 mission_solve6
 		beq $t0, 0 mission_move_main
+
+		
 		
 	mission_solve6:
 		lw $t0, TIMER
 		addi $t0 $t0 10
 		sw $t0, TIMER
 
-
-		la, $t0, minibot
+		la $t0, minibot
 		sw $t0, GET_MINIBOT
 		lw $t0, minibot
 		bne $t0, $0, main_dispatch
@@ -113,7 +115,7 @@ main:
 		sw $t0, PUZZLE_CNT
 		lw $t0 4($t0)    ##oppo_puzzle
 		bgt $t0, 3, need_solve
-		
+
 		jal get_oppo_silo
 		lw $t0, atk_flag
 		beq $t0, 1, need_solve	
@@ -393,12 +395,18 @@ get_oppo_silo:
 	
 	li $t1 0
 	li $t4 3
+	li $t5 2
 	oppo_oloop:
-	bge $t1, 1600, oppo_oout
+	beq $t1, 1600, oppo_oout
 		add $t3 $t0 $t1	
 		lbu $t3 0($t3)
+#		bne $t1, 1046, test_bk
+#			li $v0 1
+#			move $a0 $t3
+#			syscaLL
+		test_bk:
 		beq $t3 $t4 storeturn
-		
+		beq $t3 $t5 storeturn
 	addi $t1 $t1 1
 	j oppo_oloop
 
