@@ -1,4 +1,3 @@
-B
 .data
 # syscall constants
 PRINT_STRING            = 4
@@ -42,7 +41,7 @@ PUZZLE_CNT              = 0xffff2008
 
 TSHLD = 5
 
-CTR_LEFT = 15
+CTR_LEFT = 14
 CTR_TOP = 7
 
 L_LEFT = 2
@@ -366,9 +365,9 @@ get_oppo_silo:
 	li $t1 0
 	li $t4 3
 	oppo_oloop:
-	bge $t1, 1600, oppo_ooout
+	bge $t1, 1600, oppo_oout
 		add $t3 $t0 $t1	
-		lbu $t3 0($t1)
+		lbu $t3 0($t3)
 		beq $t3 $t4 storeturn
 		
 	addi $t1 $t1 1
