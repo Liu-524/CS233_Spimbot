@@ -55,7 +55,7 @@ GRIDSIZE = 16
 signal:      	   .word 0
 has_puzzle:        .word 0
 puzzle_cnt:  .word 1
-
+finishing:   .word 0
 anchor: 		   .word -1
 oppo_puzzle:       .word 0:3
 puzzle:      .half 0:2000             
@@ -94,12 +94,138 @@ main:
 		j center_main
 		
 		main_dispatch:
+        lw $t0, TIMER
+        bgt $t0, 9000000, finish
 		lw $t0, signal
 		beq $t0, 1 mission_solve6
 		beq $t0, 0 mission_move_main
 
-		
-		
+	finish:
+        li $t0, 1
+        sw $t0, finishing
+        lw $t0, BOT_X
+        lw $t1, BOT_Y
+        bgt $t0, 160, bottom_right
+        lw $t0, signal
+        blt $t0, 2, ftl_skip
+        bne $t0, 2, ftl_skip2
+        jal transfer_l2m
+        j ftl_skip
+        ftl_skip2:
+        jal transfer_r2m
+        ftl_skip:
+        top_left:
+            li $a0, 14
+            li $a1, 14
+            jal move_main
+            li $a0, 12
+            li $a1, 11
+            jal move_main
+            li $a0, 10
+            li $a1, 11
+            jal move_main
+            li $a0, 5
+            li $a1, 5
+            jal move_main
+            li $a0, 7
+            li $a1, 10
+            jal move_main
+            li $a0, 5
+            li $a1, 15
+            jal move_main
+            li $a0, 5
+            li $a1, 15
+            jal move_main
+
+        j top_left
+        bottom_right:
+            li $s6 0
+        	li $s8 0
+            li $s7 0
+        	fbr_get_loop:
+        		beq $s6, 10, fbr_out
+        		jal fin_left_target
+        		move $a0 $s8
+                move $a1 $s7
+        		jal move_main
+        		addi $s6 $s6 1
+        	j fbr_get_loop
+        	fbr_out:
+        j bottom_right
+	j finish
+
+    fin_left_target:
+        la $t9 location
+        sw $t9 GET_KERNEL_LOCATIONS($0)
+        #ensure safety
+        li $t5 13 #right bound
+        li $t6 20 #bottom bound
+        bge $s7 $t6 skipv0resetfl
+        li $s7 0
+        skipv0resetfl:
+        bge $s8 $t5 skipv1resetfl
+        li $s8 0
+        skipv1resetfl:
+        li $t6 40
+        addi $t9 $t9 4
+        mt_outerfl:
+        bge $s7 20 mt_outer_exitfl
+            mt_innerfl:
+            bge $s8 13 mt_inner_exitfl
+                mul $t8 $t6 $s7
+                add $t8 $t8 $s8
+                add $t8 $t8 $t9
+                lb $t8 0($t8)
+                blt $t8, TSHLD mt_next_locfl
+                jr $ra
+                mt_next_locfl:
+            addi $s8 $s8 1
+            j mt_innerfl
+            mt_inner_exitfl:
+
+            li $s8 0
+        addi $s7 $s7 1
+        j mt_outerfl
+        mt_outer_exitfl:
+        li $s7 0
+        jr $ra
+
+    # right_target:
+    #     la $t9 location
+    #     sw $t9 GET_KERNEL_LOCATIONS($0)
+    #     #ensure safety
+    #     li $t5 37 #right bound
+    #     li $t6 17
+    #     bge $s7 $t6 skipv0reset
+    #     li $s7 R_TOP
+    #     skipv0reset2:
+    #     bge $s8 $t5 skipv1reset
+    #     li $s8 R_LEFT
+    #     skipv1reset2:
+    #     li $t6 40
+    #     addi $t9 $t9 4
+    #     mt_outer2:
+    #     bge $s7 17 mt_outer_exit2
+    #         mt_inner2:
+    #         bge $s8 37 mt_inner_exit2
+    #             mul $t8 $t6 $s7
+    #             add $t8 $t8 $s8
+    #             add $t8 $t8 $t9
+    #             lb $t8 0($t8)
+    #             blt $t8, TSHLD mt_next_loc2
+    #             jr $ra
+    #             mt_next_loc2:
+    #         addi $s8 $s8 1
+    #         j mt_inner2
+    #         mt_inner_exit2:
+
+    #         li $s8 R_LEFT
+    #     addi $s7 $s7 1
+    #     j mt_outer2
+    #     mt_outer_exit2:
+    #     li $s7 R_TOP
+    #     jr $ra
+
 	mission_solve6:
 		lw $t0, TIMER
 		addi $t0 $t0 10
@@ -1543,12 +1669,17 @@ bonk_interrupt:
 		sw $a0 ANGLE_CONTROL($0)
 		li $a0 10
 		sw $a0 VELOCITY($0)
-		li $v0 20
+		li $v0 30
 		bnk_wait:
 		beq $a0 $v0 bnk_out
 		addi $a0 $a0 1
 		j bnk_wait
 		bnk_out:
+        lw $a0, finishing
+        bne $a0, $zero, bnk_skip
+        sw $zero, VELOCITY
+        bnk_skip:
+
 		
 #Fill in your code here
 		
