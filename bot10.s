@@ -731,10 +731,10 @@ left_target:
         #ensure safety
         li $t5 11 #right bound
         li $t6 34
-        bge $s7 $t6 skipv0reset
+        bge $s7 $t6 skipv0reset1
         li $s7 L_TOP
         skipv0reset1:
-        bge $s8 $t5 skipv1reset
+        bge $s8 $t5 skipv1reset1
         li $s8 L_LEFT
         skipv1reset1:
         li $t6 40
@@ -767,10 +767,10 @@ right_target:
         #ensure safety
         li $t5 37 #right bound
         li $t6 17
-        bge $s7 $t6 skipv0reset
+        bge $s7 $t6 skipv0reset2
         li $s7 R_TOP
         skipv0reset2:
-        bge $s8 $t5 skipv1reset
+        bge $s8 $t5 skipv1reset2
         li $s8 R_LEFT
         skipv1reset2:
         li $t6 40
