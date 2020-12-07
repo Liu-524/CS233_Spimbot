@@ -46,6 +46,9 @@ CTR_TOP = 7
 L_LEFT = 2
 L_TOP = 20
 
+R_LEFT = 29
+R_TOP = 5
+
 ### Puzzle
 GRIDSIZE = 16
 signal:      	   .word 0
@@ -57,7 +60,7 @@ location:    .byte 0:1700
 minibot:	 .word 0:30
 atk_flag:    .word 0
 test_loc:    .word 0:10
-puzzle_cnt:  .word 3
+puzzle_cnt:  .word 1
 silo_built:  .word 0
 
 #### Puzzle
@@ -168,16 +171,18 @@ main:
 	add $t8 $t8 $t9
 	sw $t8, TIMER
 
-	li $s8 CTR_LEFT
-	li $s7 CTR_TOP
+	
     get_more:
 	lw $t0, anchor
 	beq $t0, 0, middle_get
-	beq $t0, 1, left_get
-
-	middle_get:
+	beq $t0, 1, middle_get1
+	beq $t0, 2, left_get
+	beq $t0, 3, right_get
+middle_get:
 	li $s6 0
 	middle_get_loop:
+		li $s8 CTR_LEFT
+		li $s7 CTR_TOP
 		beq $s6, 15, middle_out
 		jal main_target
 		move $a0 $s8
@@ -186,12 +191,32 @@ main:
 		addi $s6 $s6 1
 	j middle_get_loop
 	middle_out:
+
 	jal transfer_m2l
-	li $t0, 1
+	li $t0, 2
 	sw $t0, anchor
 	j get_out
 
-	left_get:
+middle_get1:
+    li $s6 0
+    middle_get_loop1:
+        li $s8 CTR_LEFT
+        li $s7 CTR_TOP
+        beq $s6, 15, middle_out1
+        jal main_target
+        move $a0 $s8
+        move $a1 $s7
+        jal move_main
+        addi $s6 $s6 1
+    j middle_get_loop1
+    middle_out1:
+
+    jal transfer_m2r
+    li $t0, 3
+    sw $t0, anchor
+    j get_out
+
+left_get:
 	li $s8 L_LEFT
 	li $s7 L_TOP
 	li $s6 0
@@ -205,33 +230,35 @@ main:
     j left_get_loop
     left_out:
     jal transfer_l2m
+    li $t0, 1
+    sw $t0, anchor
+    j get_out
+
+right_get:
+    li $s8 R_LEFT
+    li $s7 R_TOP
+    li $s6 0
+    right_get_loop:
+        beq $s6, 10, right_out
+        jal right_target
+        move $a0 $s8
+        move $a1 $s7
+        jal move_main
+        addi $s6 $s6 1
+    j right_get_loop
+    right_out:
+    jal transfer_r2m
     li $t0, 0
     sw $t0, anchor
     j get_out
 
-        left_get:
-	li $s8 L_LEFT
-	li $s7 L_TOP
-	li $s6 0
-	left_get_loop:
-		beq $s6, 10, left_out
-		jal left_target
-		move $a0 $s8
-		move $a1 $s7
-		jal move_main
-		addi $s6 $s6 1
-        j left_get_loop
-        left_out:
-        jal transfer_l2m
-        li $t0, 0
-        sw $t0, anchor
-        j get_out
+get_out:
+    lw $t8 signal
+    bne $t8, 0, main_dispatch
+    j get_more
 
-	get_out:
-	lw $t8 signal
-	bne $t8, 0, main_dispatch
-	j get_more
 
+	
 
 
 	test_field:
@@ -252,7 +279,7 @@ main:
         li $t0, 0x1a06
         sw $t0, SELECT_IDLE
         sw $t0, SET_TARGET
-        li $a0, 1000
+        li $a0, 160
         jal stop_timer
         li $t0, 0x1a06  ## build silo at (6,26)
         sw $t0, BUILD_SILO
@@ -691,7 +718,7 @@ left_target:
         li $s7 L_TOP
         jr $ra
 
-left_target:
+right_target:
         la $t9 location
         sw $t9 GET_KERNEL_LOCATIONS($0)
         #ensure safety
