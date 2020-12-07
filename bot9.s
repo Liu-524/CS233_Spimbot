@@ -217,11 +217,6 @@ main:
 
 
 
-
-
-
-	
-
 	test_field:
 	# lw $t8, TIMER
 	# li $t9 10000
@@ -561,7 +556,7 @@ yx_move:
 		move $a0 $s1
         jal stop_timer
 
-        ble $s1 $0 yxleft
+        ble $s0 $0 yxleft
         j yxright
     yup:
         li $t8 270
@@ -573,7 +568,7 @@ yx_move:
 		move $a0 $s1
 		neg $a0 $a0
         jal stop_timer
-        ble $s1 $0 yxleft
+        ble $s0 $0 yxleft
         j yxright
         yxleft:
             li $t8 180
@@ -692,7 +687,7 @@ transfer_m2l:
     sw $t0, ANGLE_CONTROL
     li $t0 10
     sw $t0, VELOCITY
-    li $a0 80
+    li $a0 56
     jal stop_timer
     lw $ra 0($sp)
     addi $sp $sp 4
@@ -710,7 +705,7 @@ transfer_l2m:
     sw $t0, ANGLE_CONTROL
     li $t0 10
     sw $t0, VELOCITY
-    li $a0 80
+    li $a0 56
     jal stop_timer
     lw $ra 0($sp)
     addi $sp $sp 4
