@@ -486,6 +486,21 @@ right_get:
     j get_out
 
 get_out:
+	jal get_oppo_silo
+	
+        lw $t0, atk_flag
+
+        beq $t0, 0, non_atk
+        la $t0, minibot
+        sw $t0, GET_MINIBOT
+        lw $t1, minibot
+        beq $t1, 0, non_atk1
+            lw $t0, 4($t0)
+            sw $t0, SELECT_ID
+            lw $t0, test_loc
+            sw $t0, SET_TARGET
+
+        non_atk1:
     lw $t8 signal
     bne $t8, 0, main_dispatch
     j get_more
