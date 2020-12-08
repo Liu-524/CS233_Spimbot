@@ -97,7 +97,7 @@ main:
 		
 
         lw $t0, TIMER
-        bgt $t0, 9000000, finish
+        bgt $t0, 8700000, finish
 		lw $t0, signal
 		beq $t0, 1 mission_solve6
 		beq $t0, 0 mission_move_main
