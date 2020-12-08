@@ -63,7 +63,7 @@ heap:        .half 0:2000
 location:    .byte 0:1700
 minibot:	 .word 0:30
 atk_flag:    .word 0
-test_loc:    .word 0:10
+test_loc:    .word 0
 
 silo_built:  .word 0
 
@@ -278,9 +278,12 @@ main:
 		lw $t0, atk_flag
 		
 		beq $t0, 0, non_atk
-		lw $t0, minibot
-		beq $t0, 0, non_atk
-			sw $t0, SELECT_IDLE
+		la $t0, minibot
+        sw $t0, GET_MINIBOT
+        lw $t1, minibot
+		beq $t1, 0, non_atk
+            lw $t0, 4($t0)
+			sw $t0, SELECT_ID
 			lw $t0, test_loc
 			sw $t0, SET_TARGET
 
@@ -485,36 +488,6 @@ get_out:
 
 	# j test_field	
 
-move_minibot: ## move $a0 bots to $a0 different locations stored in $a1
-    sub $sp, $sp, 4
-	la $a1 test_loc
-    sw $ra, 0($sp)
-    la $t0, minibot
-    sw $t0, GET_MINIBOT
-    lw $t1, 0($t0) # number of minibots
-	#bgt $a0, $t1, mv_mbot_out
-    addi $t2, $t0, 4 # minibots*
-    li $t0, 0
-    mv_mbot:
-    bge $t0, $t1, mv_mbot_out
-        li $t3, 4
-        mul $t3, $t3, $t0
-        add $t3, $t3, $a1
-        lw $t4, 0($t3)
-#        sll $t4, $t4, 8
-#        lbu $t5, 0($t3) # loc
-        lw $t6, 0($t2) # bot id
-        sw $t6, SELECT_ID
-        sw $t4, SET_TARGET
-        addi $t0, $t0, 1
-        addi $t2, $t2, 8
-    j mv_mbot
-    mv_mbot_out:
-    lw $ra, 0($sp)
-    addi $sp, $sp, 4
-    jr $ra
-
-
 get_oppo_silo:
 	la $t0 location
 	sw $t0, GET_MAP
@@ -526,13 +499,13 @@ get_oppo_silo:
 	beq $t1, 1600, oppo_oout
 		add $t3 $t0 $t1	
 		lbu $t3 0($t3)
-		bne $t1, 1128, test_bk
+		bne $t1, 1180, test_bk
 			li $v0 1
 			move $a0 $t3
 			syscall
 		test_bk:
 		beq $t3 $t4 storeturn
-#beq $t3 $t5 storeturn
+        beq $t3 $t5 storeturn
 	addi $t1 $t1 1
 	j oppo_oloop
 
@@ -553,48 +526,14 @@ get_oppo_silo:
 	sll $t4 $t4 $t6
 	or $t4 $t4 $t5
 	sw $t4, test_loc
-
-
-
-assign_minibot:
-		
-		addi $sp $sp -4
-		sw $ra 0($sp)
-		jal get_next_location
-		la $t0 minibot
-		sw $t0 GET_MINIBOT($0)
-		lw $t0 minibot($0)
-		li $t1 0
-		li $t4 8
-		la $t2 minibot
-		addi $t2 $t2 4
-		addi $t0 $t0 -1
-		li $v0 0
-		li $v1 0
-		assign_loop:
-		ble $t0 $t1 assign_loop_out
-			mul $t3 $t1 $t4
-			add $t5 $t3 $t2
-			lw $t5 0($t5) #ID
-			sw $t5 SELECT_ID($0)
-			jal get_next_location
-			sll $t8 $v0 8
-			or $t8 $t8 $v1
-			sw $t8 SET_TARGET($0)
-		addi $t1 $t1 1
-		j assign_loop
-		assign_loop_out:
-
-		lw $ra 0($sp)
-		addi $sp $sp 4
-		jr $ra
+    jr $ra
 
 
 
 
 
 
-get_next_location:
+#get_next_location:
 		la $t9 location
 		sw $t9 GET_KERNEL_LOCATIONS($0)
 		la $t4 test_loc
@@ -646,12 +585,6 @@ get_next_location:
 		j loopp
 		loop_over:
 		jr $ra
-
-return_minibot: ## move all idle minibots back to silo
-    li $t0, 0x00001a06
-    sw $t0, SELECT_IDLE
-    sw $t0, SET_TARGET
-    jr $ra
 
 move_main:
     addi $sp $sp -20
@@ -805,7 +738,6 @@ yx_move:
 			jal stop_timer
 			j move_end
 	move_end:
-        jal return_minibot
 		lw $ra 0($sp)
 		lw $s0 4($sp)
 		lw $s1 8($sp)
