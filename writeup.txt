@@ -1,1 +1,13 @@
-We've tried several different implementations. At first, we tried to solve 10 puzzles at the beginning, make several minibots and build a silo. We then find out that this implementation costs too many cycles on solving puzzles so we had less time picking corn with our mainbot. We finally gave up on minibots, and came up with a solution of only creating minibots when our opponent builds a silo and destroying the silo.
+For moving of the main bot, we first used arctan, distant and kernel search algorithm. But the arctan didn't meet the precision we need. So we shifted to a orthogonal coordinate system.
+
+Generally, we let the main bot to travel in the three round areas in the map. We have dedicated search function for each area. We use our location and relative movements to choose the xy and yx movement to be done. This feature can prevent collision, and let us move at a high speed.
+
+The kernel searching algorithm can search in a continuous fashion and let our bot pick in a more kernel dense area.
+
+We've tried several different strategies. At first, we tried to solve many puzzles at the beginning, make several minibots and build a silo. We then find out that this implementation costs too many cycles on solving puzzles so we had less time picking corn with our mainbot.
+
+We finally decided to expand the supported moving area of the main bot and only creating minibots when our opponent builds a silo and destroying the silo. This implementation is merged with the moving to reduce cycles wasted on waiting for a puzzle to come.
+
+When our opponent get more than 3 coins or have built a silo, we start to solve a puzzle between movments and then build a advanced minibot and guide it to that silo.
+
+Finally, when we reach the task dispatch in the last 10% of the time, we triger the final path, which traverls through the difficult triangle areas. If our opponent give up those regions, we get most kernels in those areas.
