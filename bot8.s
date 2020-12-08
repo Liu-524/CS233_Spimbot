@@ -191,12 +191,12 @@ main:
         sw $t0, SPAWN_MINIBOT
         sw $t0, SPAWN_MINIBOT
         
-        li $t0, 0x1c08
+        li $t0, 0x0505
         sw $t0, SELECT_IDLE
         sw $t0, SET_TARGET
         li $a0, 1000
         jal stop_timer
-        li $t0, 0x1c08  ## build silo at (6,26)
+        li $t0, 0x0505  ## build silo at (6,26)
         sw $t0, BUILD_SILO
         li $t8, 1
         sw $t8, silo_built

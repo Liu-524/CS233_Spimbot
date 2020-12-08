@@ -523,7 +523,7 @@ get_oppo_silo:
    	mul $t4 $t4 $t5 
 	sub $t4 $t1 $t4 #x
 	li $t6 8
-	sll $t4 $t4 $t6
+	sll $t5 $t5 $t6
 	or $t4 $t4 $t5
 	sw $t4, test_loc
     jr $ra
